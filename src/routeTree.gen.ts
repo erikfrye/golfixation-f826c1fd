@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as CaptainRouteImport } from './routes/captain'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CaptainIndexRouteImport } from './routes/captain.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TournamentIdRouteImport } from './routes/tournament.$id'
 import { Route as AdminTournamentsNewRouteImport } from './routes/admin.tournaments.new'
@@ -38,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CaptainIndexRoute = CaptainIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CaptainRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -68,20 +74,21 @@ const AdminTournamentsIdTeamsRoute = AdminTournamentsIdTeamsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/captain': typeof CaptainRoute
+  '/captain': typeof CaptainRouteWithChildren
   '/login': typeof LoginRoute
   '/tournament/$id': typeof TournamentIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/captain/': typeof CaptainIndexRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRouteWithChildren
   '/admin/tournaments/new': typeof AdminTournamentsNewRoute
   '/admin/tournaments/$id/teams': typeof AdminTournamentsIdTeamsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/captain': typeof CaptainRoute
   '/login': typeof LoginRoute
   '/tournament/$id': typeof TournamentIdRoute
   '/admin': typeof AdminIndexRoute
+  '/captain': typeof CaptainIndexRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRouteWithChildren
   '/admin/tournaments/new': typeof AdminTournamentsNewRoute
   '/admin/tournaments/$id/teams': typeof AdminTournamentsIdTeamsRoute
@@ -90,10 +97,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/captain': typeof CaptainRoute
+  '/captain': typeof CaptainRouteWithChildren
   '/login': typeof LoginRoute
   '/tournament/$id': typeof TournamentIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/captain/': typeof CaptainIndexRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRouteWithChildren
   '/admin/tournaments/new': typeof AdminTournamentsNewRoute
   '/admin/tournaments/$id/teams': typeof AdminTournamentsIdTeamsRoute
@@ -107,16 +115,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/tournament/$id'
     | '/admin/'
+    | '/captain/'
     | '/admin/tournaments/$id'
     | '/admin/tournaments/new'
     | '/admin/tournaments/$id/teams'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/captain'
     | '/login'
     | '/tournament/$id'
     | '/admin'
+    | '/captain'
     | '/admin/tournaments/$id'
     | '/admin/tournaments/new'
     | '/admin/tournaments/$id/teams'
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/tournament/$id'
     | '/admin/'
+    | '/captain/'
     | '/admin/tournaments/$id'
     | '/admin/tournaments/new'
     | '/admin/tournaments/$id/teams'
@@ -136,7 +146,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  CaptainRoute: typeof CaptainRoute
+  CaptainRoute: typeof CaptainRouteWithChildren
   LoginRoute: typeof LoginRoute
   TournamentIdRoute: typeof TournamentIdRoute
 }
@@ -170,6 +180,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/captain/': {
+      id: '/captain/'
+      path: '/'
+      fullPath: '/captain/'
+      preLoaderRoute: typeof CaptainIndexRouteImport
+      parentRoute: typeof CaptainRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -234,10 +251,21 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CaptainRouteChildren {
+  CaptainIndexRoute: typeof CaptainIndexRoute
+}
+
+const CaptainRouteChildren: CaptainRouteChildren = {
+  CaptainIndexRoute: CaptainIndexRoute,
+}
+
+const CaptainRouteWithChildren =
+  CaptainRoute._addFileChildren(CaptainRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  CaptainRoute: CaptainRoute,
+  CaptainRoute: CaptainRouteWithChildren,
   LoginRoute: LoginRoute,
   TournamentIdRoute: TournamentIdRoute,
 }
