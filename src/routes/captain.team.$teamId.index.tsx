@@ -283,7 +283,7 @@ function HolePicker({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-30 flex items-end justify-center bg-foreground/40" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-foreground/40 pb-14" onClick={onClose}>
       <div
         className="w-full max-w-3xl rounded-t-2xl bg-card p-5 shadow-lg"
         onClick={(e) => e.stopPropagation()}
