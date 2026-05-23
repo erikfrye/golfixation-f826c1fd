@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Flag, ChevronLeft, RefreshCw } from "lucide-react";
+import { Flag, ChevronLeft, RefreshCw, ChevronDown } from "lucide-react";
 
 export const Route = createFileRoute("/tournament/$id")({
   head: ({ params }) => ({
@@ -28,6 +28,7 @@ type Score = { team_id: string; hole_number: number; strokes: number };
 function TournamentPage() {
   const { id } = Route.useParams();
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   const tournamentQ = useQuery({
     queryKey: ["tournament", id],
@@ -194,18 +195,17 @@ function TournamentPage() {
                   </thead>
                   <tbody>
                     {leaderboard.map((row) => (
-                      <tr key={row.team.id} className="border-b border-border last:border-0">
-                        <td className="px-3 py-3 font-mono text-foreground">
-                          {row.isTied ? `T${row.rank}` : row.rank}
-                        </td>
-                        <td className="px-3 py-3 font-medium text-foreground">{row.team.name}</td>
-                        <td className="px-3 py-3 text-right font-mono text-muted-foreground">
-                          {row.holesPlayed}/{totalHoles}
-                        </td>
-                        <td className="px-3 py-3 text-right font-mono font-semibold text-foreground">
-                          {formatNet(row.net, row.holesPlayed)}
-                        </td>
-                      </tr>
+                      <ScoreRow
+                        key={row.team.id}
+                        row={row}
+                        totalHoles={totalHoles}
+                        holes={holesQ.data ?? []}
+                        scores={(scoresQ.data ?? []).filter((s) => s.team_id === row.team.id)}
+                        expanded={expandedTeam === row.team.id}
+                        onToggle={() =>
+                          setExpandedTeam(expandedTeam === row.team.id ? null : row.team.id)
+                        }
+                      />
                     ))}
                   </tbody>
                 </table>
@@ -216,6 +216,115 @@ function TournamentPage() {
       </main>
     </div>
   );
+}
+
+function ScoreRow({
+  row,
+  totalHoles,
+  holes,
+  scores,
+  expanded,
+  onToggle,
+}: {
+  row: { team: Team; holesPlayed: number; totalStrokes: number; net: number; rank: number; isTied: boolean };
+  totalHoles: number;
+  holes: Hole[];
+  scores: Score[];
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const scoreByHole = new Map(scores.map((s) => [s.hole_number, s.strokes]));
+  return (
+    <>
+      <tr
+        className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/30"
+        onClick={onToggle}
+      >
+        <td className="px-3 py-3 font-mono text-foreground">
+          {row.isTied ? `T${row.rank}` : row.rank}
+        </td>
+        <td className="px-3 py-3 font-medium text-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <ChevronDown
+              className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
+                expanded ? "" : "-rotate-90"
+              }`}
+            />
+            {row.team.name}
+          </span>
+        </td>
+        <td className="px-3 py-3 text-right font-mono text-muted-foreground">
+          {row.holesPlayed}/{totalHoles}
+        </td>
+        <td className="px-3 py-3 text-right font-mono font-semibold text-foreground">
+          {formatNet(row.net, row.holesPlayed)}
+        </td>
+      </tr>
+      {expanded && (
+        <tr className="border-b border-border bg-muted/20 last:border-0">
+          <td colSpan={4} className="px-3 py-3">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-max text-xs">
+                <thead className="text-muted-foreground">
+                  <tr>
+                    <th className="px-2 py-1 text-left font-semibold">Hole</th>
+                    {holes.map((h) => (
+                      <th key={h.hole_number} className="px-2 py-1 text-center font-mono font-semibold">
+                        {h.hole_number}
+                      </th>
+                    ))}
+                    <th className="px-2 py-1 text-center font-semibold">Tot</th>
+                  </tr>
+                  <tr className="text-muted-foreground">
+                    <th className="px-2 py-1 text-left font-normal">Par</th>
+                    {holes.map((h) => (
+                      <th key={h.hole_number} className="px-2 py-1 text-center font-mono font-normal">
+                        {h.par}
+                      </th>
+                    ))}
+                    <th className="px-2 py-1 text-center font-mono font-normal">
+                      {holes.reduce((s, h) => s + h.par, 0)}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="px-2 py-1 text-left font-semibold text-foreground">Score</td>
+                    {holes.map((h) => {
+                      const v = scoreByHole.get(h.hole_number);
+                      return (
+                        <td key={h.hole_number} className="px-2 py-1 text-center font-mono">
+                          {v == null ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : (
+                            <ScoreCell strokes={v} par={h.par} />
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td className="px-2 py-1 text-center font-mono font-semibold text-foreground">
+                      {row.totalStrokes || "—"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+function ScoreCell({ strokes, par }: { strokes: number; par: number }) {
+  const diff = strokes - par;
+  let cls = "text-foreground";
+  let wrap = "";
+  if (diff <= -2) wrap = "inline-flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary";
+  else if (diff === -1) wrap = "inline-flex h-6 w-6 items-center justify-center rounded-full border border-primary";
+  else if (diff === 1) wrap = "inline-flex h-6 w-6 items-center justify-center border border-muted-foreground/40";
+  else if (diff >= 2) wrap = "inline-flex h-6 w-6 items-center justify-center border-2 border-destructive/60 text-destructive";
+  return <span className={`${wrap} ${cls}`}>{strokes}</span>;
 }
 
 function formatNet(net: number, holesPlayed: number): string {
