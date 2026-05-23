@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronLeft, Plus, Trash2, UserPlus } from "lucide-react";
 
-export const Route = createFileRoute("/admin/tournaments/$id/teams")({
+export const Route = createFileRoute("/admin/tournaments/$id_/teams")({
   component: ManageTeams,
 });
 
