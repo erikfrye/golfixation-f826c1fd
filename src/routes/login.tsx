@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Flag } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { redeemOverrideCode } from "@/lib/captain.functions";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -14,16 +16,217 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+type Tab = "captain" | "override" | "admin";
+
 function LoginPage() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("captain");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin" });
+      if (data.session) navigate({ to: "/captain" });
     });
   }, [navigate]);
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-10">
+      <Flag className="h-10 w-10 text-primary" />
+      <h1 className="mt-4 text-2xl font-bold text-foreground">Sign in to Golfixation</h1>
+
+      <div className="mt-6 w-full max-w-sm rounded-lg border border-border bg-card p-5 shadow-sm">
+        <div className="mb-4 flex rounded-md bg-muted p-1 text-xs font-medium">
+          {(["captain", "override", "admin"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`flex-1 rounded px-2 py-1.5 transition-colors ${
+                tab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              }`}
+            >
+              {t === "captain" ? "Email code" : t === "override" ? "Override code" : "Admin"}
+            </button>
+          ))}
+        </div>
+
+        {tab === "captain" && <CaptainOtpForm />}
+        {tab === "override" && <OverrideForm />}
+        {tab === "admin" && <AdminForm />}
+      </div>
+
+      <Link to="/" className="mt-6 text-xs text-muted-foreground hover:text-foreground">
+        ← Back to tournaments
+      </Link>
+    </div>
+  );
+}
+
+function CaptainOtpForm() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [stage, setStage] = useState<"email" | "code">("email");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const sendCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: { shouldCreateUser: true },
+    });
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setStage("code");
+  };
+
+  const verify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: code.trim(),
+      type: "email",
+    });
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    navigate({ to: "/captain" });
+  };
+
+  if (stage === "email") {
+    return (
+      <form onSubmit={sendCode} className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          Enter the email your tournament admin registered for your team.
+        </p>
+        <input
+          type="email"
+          required
+          autoFocus
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        />
+        <button
+          disabled={loading}
+          className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+        >
+          {loading ? "Sending…" : "Email me a code"}
+        </button>
+        {error && <p className="text-xs text-destructive">{error}</p>}
+      </form>
+    );
+  }
+
+  return (
+    <form onSubmit={verify} className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Enter the 6-digit code we sent to <span className="font-medium text-foreground">{email}</span>.
+      </p>
+      <input
+        inputMode="numeric"
+        pattern="[0-9]*"
+        required
+        autoFocus
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        placeholder="123456"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-center font-mono text-lg tracking-widest"
+      />
+      <button
+        disabled={loading}
+        className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+      >
+        {loading ? "Verifying…" : "Sign in"}
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setStage("email");
+          setCode("");
+          setError(null);
+        }}
+        className="w-full text-xs text-muted-foreground hover:text-foreground"
+      >
+        ← Use a different email
+      </button>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </form>
+  );
+}
+
+function OverrideForm() {
+  const navigate = useNavigate();
+  const redeem = useServerFn(redeemOverrideCode);
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const result = await redeem({ data: { code, email } });
+      const { error: vErr } = await supabase.auth.verifyOtp({
+        token_hash: result.tokenHash,
+        type: "magiclink",
+      });
+      if (vErr) throw new Error(vErr.message);
+      navigate({ to: "/captain" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to redeem code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Skip email entirely with the tournament override code provided by your admin.
+      </p>
+      <input
+        type="text"
+        required
+        value={code}
+        onChange={(e) => setCode(e.target.value.toUpperCase())}
+        placeholder="OVERRIDE CODE"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-center font-mono text-sm tracking-wider"
+      />
+      <input
+        type="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="captain email"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+      <button
+        disabled={loading}
+        className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+      >
+        {loading ? "Signing in…" : "Sign in with override"}
+      </button>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </form>
+  );
+}
+
+function AdminForm() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const signInGoogle = async () => {
     setError(null);
@@ -41,26 +244,17 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <Flag className="h-10 w-10 text-primary" />
-      <h1 className="mt-4 text-2xl font-bold text-foreground">Sign in to Golfixation</h1>
-      <p className="mt-2 max-w-sm text-center text-sm text-muted-foreground">
-        Admins sign in with Google to manage tournaments. Captain login (email OTP) is coming in Phase 2.
-      </p>
-
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">Tournament admins sign in with Google.</p>
       <button
         onClick={signInGoogle}
         disabled={loading}
-        className="mt-6 inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent disabled:opacity-60"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent disabled:opacity-60"
       >
         <GoogleIcon />
         {loading ? "Redirecting…" : "Continue with Google"}
       </button>
-      {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
-
-      <Link to="/" className="mt-6 text-xs text-muted-foreground hover:text-foreground">
-        ← Back to tournaments
-      </Link>
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
