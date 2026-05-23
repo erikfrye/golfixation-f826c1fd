@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as CaptainRouteImport } from './routes/captain'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -21,6 +22,11 @@ import { Route as AdminTournamentsIdTeamsRouteImport } from './routes/admin.tour
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptainRoute = CaptainRouteImport.update({
+  id: '/captain',
+  path: '/captain',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -62,6 +68,7 @@ const AdminTournamentsIdTeamsRoute = AdminTournamentsIdTeamsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/captain': typeof CaptainRoute
   '/login': typeof LoginRoute
   '/tournament/$id': typeof TournamentIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/captain': typeof CaptainRoute
   '/login': typeof LoginRoute
   '/tournament/$id': typeof TournamentIdRoute
   '/admin': typeof AdminIndexRoute
@@ -82,6 +90,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/captain': typeof CaptainRoute
   '/login': typeof LoginRoute
   '/tournament/$id': typeof TournamentIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/captain'
     | '/login'
     | '/tournament/$id'
     | '/admin/'
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/captain'
     | '/login'
     | '/tournament/$id'
     | '/admin'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/captain'
     | '/login'
     | '/tournament/$id'
     | '/admin/'
@@ -124,6 +136,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  CaptainRoute: typeof CaptainRoute
   LoginRoute: typeof LoginRoute
   TournamentIdRoute: typeof TournamentIdRoute
 }
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/captain': {
+      id: '/captain'
+      path: '/captain'
+      fullPath: '/captain'
+      preLoaderRoute: typeof CaptainRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -217,9 +237,20 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  CaptainRoute: CaptainRoute,
   LoginRoute: LoginRoute,
   TournamentIdRoute: TournamentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
