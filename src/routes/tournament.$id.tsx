@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Flag, ChevronLeft, RefreshCw, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Flag, ChevronLeft, RefreshCw, ChevronDown, ChevronRight, X, Pencil, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/tournament/$id")({
   head: ({ params }) => ({
@@ -10,6 +10,9 @@ export const Route = createFileRoute("/tournament/$id")({
       { title: `Leaderboard — Golfixation` },
       { name: "description", content: `Live leaderboard for tournament ${params.id}.` },
     ],
+  }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    teamId: typeof search.teamId === "string" ? search.teamId : undefined,
   }),
   component: TournamentPage,
 });
@@ -34,6 +37,7 @@ type Player = { id: string; name: string; team_id: string };
 
 function TournamentPage() {
   const { id } = Route.useParams();
+  const { teamId: captainTeamId } = Route.useSearch();
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [modal, setModal] = useState<{ teamId: string; hole: number } | null>(null);
