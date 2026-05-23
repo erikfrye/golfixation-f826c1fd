@@ -34,7 +34,7 @@ function Index() {
             to="/login"
             className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
-            Captain login
+            Login
           </Link>
         </div>
       </header>
