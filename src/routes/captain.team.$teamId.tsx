@@ -1,5 +1,7 @@
-import { createFileRoute, Outlet, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Pencil, Trophy } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/captain/team/$teamId")({
   component: TeamLayout,
@@ -7,9 +9,19 @@ export const Route = createFileRoute("/captain/team/$teamId")({
 
 function TeamLayout() {
   const { teamId } = Route.useParams();
-  const router = useRouter();
-  const pathname = router.state.location.pathname;
-  const isLeaderboard = pathname.includes("/leaderboard");
+  const teamQ = useQuery({
+    queryKey: ["captain-layout-team", teamId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("teams")
+        .select("tournament_id")
+        .eq("id", teamId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { tournament_id: string } | null;
+    },
+  });
+  const tournamentId = teamQ.data?.tournament_id;
 
   return (
     <div className="min-h-screen bg-background pb-16">
@@ -19,24 +31,30 @@ function TeamLayout() {
           <Link
             to="/captain/team/$teamId"
             params={{ teamId }}
-            className={`flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
-              !isLeaderboard ? "text-primary" : "text-muted-foreground hover:bg-muted"
-            }`}
+            activeOptions={{ exact: true }}
+            activeProps={{ className: "text-primary" }}
+            inactiveProps={{ className: "text-muted-foreground hover:bg-muted" }}
+            className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors"
           >
             <Pencil className="h-5 w-5" />
             Scoring
           </Link>
           <div className="h-8 w-px bg-border" />
-          <Link
-            to="/captain/team/$teamId/leaderboard"
-            params={{ teamId }}
-            className={`flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
-              isLeaderboard ? "text-primary" : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <Trophy className="h-5 w-5" />
-            Leaderboard
-          </Link>
+          {tournamentId ? (
+            <Link
+              to="/tournament/$id"
+              params={{ id: tournamentId }}
+              className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+            >
+              <Trophy className="h-5 w-5" />
+              Leaderboard
+            </Link>
+          ) : (
+            <span className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium text-muted-foreground/50">
+              <Trophy className="h-5 w-5" />
+              Leaderboard
+            </span>
+          )}
         </div>
       </nav>
     </div>
