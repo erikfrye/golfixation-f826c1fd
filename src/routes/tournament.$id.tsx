@@ -184,31 +184,27 @@ function TournamentPage() {
               </div>
             ) : (
               <div className="overflow-hidden rounded-lg border border-border bg-card">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2 text-left font-semibold">Pos</th>
-                      <th className="px-3 py-2 text-left font-semibold">Team</th>
-                      <th className="px-3 py-2 text-right font-semibold">Thru</th>
-                      <th className="px-3 py-2 text-right font-semibold">Score</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaderboard.map((row) => (
-                      <ScoreRow
-                        key={row.team.id}
-                        row={row}
-                        totalHoles={totalHoles}
-                        holes={holesQ.data ?? []}
-                        scores={(scoresQ.data ?? []).filter((s) => s.team_id === row.team.id)}
-                        expanded={expandedTeam === row.team.id}
-                        onToggle={() =>
-                          setExpandedTeam(expandedTeam === row.team.id ? null : row.team.id)
-                        }
-                      />
-                    ))}
-                  </tbody>
-                </table>
+                <div className="grid grid-cols-[3rem_1fr_3.5rem_3.5rem] gap-2 border-b border-border bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div>Pos</div>
+                  <div>Team</div>
+                  <div className="text-right">Thru</div>
+                  <div className="text-right">Score</div>
+                </div>
+                <ul className="divide-y divide-border">
+                  {leaderboard.map((row) => (
+                    <ScoreRow
+                      key={row.team.id}
+                      row={row}
+                      totalHoles={totalHoles}
+                      holes={holesQ.data ?? []}
+                      scores={(scoresQ.data ?? []).filter((s) => s.team_id === row.team.id)}
+                      expanded={expandedTeam === row.team.id}
+                      onToggle={() =>
+                        setExpandedTeam(expandedTeam === row.team.id ? null : row.team.id)
+                      }
+                    />
+                  ))}
+                </ul>
               </div>
             )}
           </>
@@ -235,84 +231,80 @@ function ScoreRow({
 }) {
   const scoreByHole = new Map(scores.map((s) => [s.hole_number, s.strokes]));
   return (
-    <>
-      <tr
-        className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/30"
+    <li>
+      <button
+        type="button"
         onClick={onToggle}
+        className="grid w-full grid-cols-[3rem_1fr_3.5rem_3.5rem] items-center gap-2 px-3 py-3 text-left text-sm hover:bg-muted/30"
       >
-        <td className="px-3 py-3 font-mono text-foreground">
-          {row.isTied ? `T${row.rank}` : row.rank}
-        </td>
-        <td className="px-3 py-3 font-medium text-foreground">
-          <span className="inline-flex items-center gap-1.5">
-            <ChevronDown
-              className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
-                expanded ? "" : "-rotate-90"
-              }`}
-            />
-            {row.team.name}
-          </span>
-        </td>
-        <td className="px-3 py-3 text-right font-mono text-muted-foreground">
+        <span className="font-mono text-foreground">{row.isTied ? `T${row.rank}` : row.rank}</span>
+        <span className="flex min-w-0 items-center gap-1.5 font-medium text-foreground">
+          <ChevronDown
+            className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${
+              expanded ? "" : "-rotate-90"
+            }`}
+          />
+          <span className="truncate">{row.team.name}</span>
+        </span>
+        <span className="text-right font-mono text-muted-foreground">
           {row.holesPlayed}/{totalHoles}
-        </td>
-        <td className="px-3 py-3 text-right font-mono font-semibold text-foreground">
+        </span>
+        <span className="text-right font-mono font-semibold text-foreground">
           {formatNet(row.net, row.holesPlayed)}
-        </td>
-      </tr>
+        </span>
+      </button>
       {expanded && (
-        <tr className="border-b border-border bg-muted/20 last:border-0">
-          <td colSpan={4} className="px-3 py-3">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-max text-xs">
-                <thead className="text-muted-foreground">
-                  <tr>
-                    <th className="px-2 py-1 text-left font-semibold">Hole</th>
-                    {holes.map((h) => (
-                      <th key={h.hole_number} className="px-2 py-1 text-center font-mono font-semibold">
-                        {h.hole_number}
-                      </th>
-                    ))}
-                    <th className="px-2 py-1 text-center font-semibold">Tot</th>
-                  </tr>
-                  <tr className="text-muted-foreground">
-                    <th className="px-2 py-1 text-left font-normal">Par</th>
-                    {holes.map((h) => (
-                      <th key={h.hole_number} className="px-2 py-1 text-center font-mono font-normal">
-                        {h.par}
-                      </th>
-                    ))}
-                    <th className="px-2 py-1 text-center font-mono font-normal">
-                      {holes.reduce((s, h) => s + h.par, 0)}
+        <div className="bg-muted/20 px-3 pb-3">
+          <div className="-mx-3 overflow-x-auto px-3">
+            <table className="min-w-max text-xs">
+              <thead className="text-muted-foreground">
+                <tr>
+                  <th className="px-2 py-1 text-left font-semibold">Hole</th>
+                  {holes.map((h) => (
+                    <th key={h.hole_number} className="px-2 py-1 text-center font-mono font-semibold">
+                      {h.hole_number}
                     </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="px-2 py-1 text-left font-semibold text-foreground">Score</td>
-                    {holes.map((h) => {
-                      const v = scoreByHole.get(h.hole_number);
-                      return (
-                        <td key={h.hole_number} className="px-2 py-1 text-center font-mono">
-                          {v == null ? (
-                            <span className="text-muted-foreground">—</span>
-                          ) : (
-                            <ScoreCell strokes={v} par={h.par} />
-                          )}
-                        </td>
-                      );
-                    })}
-                    <td className="px-2 py-1 text-center font-mono font-semibold text-foreground">
-                      {row.totalStrokes || "—"}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </td>
-        </tr>
+                  ))}
+                  <th className="px-2 py-1 text-center font-semibold">Tot</th>
+                </tr>
+                <tr className="text-muted-foreground">
+                  <th className="px-2 py-1 text-left font-normal">Par</th>
+                  {holes.map((h) => (
+                    <th key={h.hole_number} className="px-2 py-1 text-center font-mono font-normal">
+                      {h.par}
+                    </th>
+                  ))}
+                  <th className="px-2 py-1 text-center font-mono font-normal">
+                    {holes.reduce((s, h) => s + h.par, 0)}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="px-2 py-1 text-left font-semibold text-foreground">Score</td>
+                  {holes.map((h) => {
+                    const v = scoreByHole.get(h.hole_number);
+                    return (
+                      <td key={h.hole_number} className="px-2 py-1 text-center font-mono">
+                        {v == null ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : (
+                          <ScoreCell strokes={v} par={h.par} />
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="px-2 py-1 text-center font-mono font-semibold text-foreground">
+                    {row.totalStrokes || "—"}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-[10px] text-muted-foreground">Swipe to see all holes →</p>
+        </div>
       )}
-    </>
+    </li>
   );
 }
 

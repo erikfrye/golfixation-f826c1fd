@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { ChevronLeft, Minus, Plus, Check, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, Minus, Plus, Check, Loader2, ChevronRight, Grid3x3, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/captain/team/$teamId")({
@@ -26,6 +26,8 @@ type Score = {
 
 function TeamScoring() {
   const { teamId } = Route.useParams();
+  const [currentHole, setCurrentHole] = useState<number>(1);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const teamQ = useQuery({
     queryKey: ["captain-team", teamId],
@@ -134,8 +136,12 @@ function TeamScoring() {
   );
   const net = totalStrokes - playedPar;
 
+  const activeHole = holes.find((h) => h.hole_number === currentHole) ?? holes[0];
+  const nextHole = holes.find((h) => h.hole_number === currentHole + 1);
+  const prevHole = [...holes].reverse().find((h) => h.hole_number < currentHole);
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6">
+    <main className="mx-auto max-w-3xl px-4 pt-6 pb-32">
       <Link to="/captain" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
         <ChevronLeft className="h-3.5 w-3.5" />
         Back to teams
@@ -186,22 +192,138 @@ function TeamScoring() {
             </div>
           )}
 
-          <div className="mt-6 space-y-3">
-            {holes.map((hole) => (
+          {activeHole && (
+            <div className="mt-6">
               <HoleCard
-                key={hole.hole_number}
+                key={activeHole.hole_number}
                 team={team}
                 tournament={tournament}
-                hole={hole}
+                hole={activeHole}
                 players={players}
                 isTexasScramble={isTexasScramble}
-                existing={scoreByHole.get(hole.hole_number) ?? null}
+                existing={scoreByHole.get(activeHole.hole_number) ?? null}
+                teeShotCounts={teeShotCounts}
+                mulliganCounts={mulliganCounts}
+                onSaved={() => {
+                  if (nextHole) setCurrentHole(nextHole.hole_number);
+                }}
               />
-            ))}
+            </div>
+          )}
+
+          {/* Bottom nav */}
+          <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 backdrop-blur">
+            <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-3">
+              <button
+                type="button"
+                disabled={!prevHole}
+                onClick={() => prevHole && setCurrentHole(prevHole.hole_number)}
+                className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-foreground disabled:opacity-40"
+                aria-label="Previous hole"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-md bg-muted px-4 py-2.5 text-sm font-medium text-foreground"
+              >
+                <Grid3x3 className="h-4 w-4" />
+                Hole {currentHole}
+              </button>
+              <button
+                type="button"
+                disabled={!nextHole}
+                onClick={() => nextHole && setCurrentHole(nextHole.hole_number)}
+                className="flex h-10 items-center gap-1 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground disabled:opacity-40"
+                aria-label="Next hole"
+              >
+                #{nextHole?.hole_number ?? currentHole}
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
+
+          {pickerOpen && (
+            <HolePicker
+              holes={holes}
+              current={currentHole}
+              scoreByHole={scoreByHole}
+              onSelect={(n) => {
+                setCurrentHole(n);
+                setPickerOpen(false);
+              }}
+              onClose={() => setPickerOpen(false)}
+            />
+          )}
         </>
       )}
     </main>
+  );
+}
+
+function HolePicker({
+  holes,
+  current,
+  scoreByHole,
+  onSelect,
+  onClose,
+}: {
+  holes: Hole[];
+  current: number;
+  scoreByHole: Map<number, Score>;
+  onSelect: (n: number) => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-foreground/40" onClick={onClose}>
+      <div
+        className="w-full max-w-3xl rounded-t-2xl bg-card p-5 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">Jump to hole</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="grid grid-cols-5 gap-2">
+          {holes.map((h) => {
+            const filled = scoreByHole.has(h.hole_number);
+            const isCurrent = h.hole_number === current;
+            return (
+              <button
+                key={h.hole_number}
+                type="button"
+                onClick={() => onSelect(h.hole_number)}
+                className={`flex h-14 flex-col items-center justify-center rounded-lg border text-base font-semibold ${
+                  isCurrent
+                    ? "border-primary text-primary"
+                    : filled
+                    ? "border-border bg-muted text-foreground"
+                    : "border-border text-foreground"
+                }`}
+              >
+                {h.hole_number}
+                <span className="text-[10px] font-normal text-muted-foreground">par {h.par}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -212,6 +334,9 @@ function HoleCard({
   players,
   isTexasScramble,
   existing,
+  teeShotCounts,
+  mulliganCounts,
+  onSaved,
 }: {
   team: Team;
   tournament: Tournament;
@@ -219,6 +344,9 @@ function HoleCard({
   players: Player[];
   isTexasScramble: boolean;
   existing: Score | null;
+  teeShotCounts: Map<string, number>;
+  mulliganCounts: Map<string, number>;
+  onSaved: () => void;
 }) {
   const qc = useQueryClient();
   const [strokes, setStrokes] = useState<number>(existing?.strokes ?? hole.par);
@@ -257,41 +385,70 @@ function HoleCard({
       return;
     }
     qc.invalidateQueries({ queryKey: ["captain-scores", team.id] });
+    onSaved();
   };
 
+  const diff = strokes - hole.par;
+  const diffLabel =
+    diff === 0 ? "PAR" : diff === -1 ? "BIRDIE" : diff === -2 ? "EAGLE" : diff <= -3 ? "ALBATROSS" : diff === 1 ? "BOGEY" : diff === 2 ? "DBL BOGEY" : `+${diff}`;
+
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
-      <div className="flex items-center justify-between">
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="mb-4 flex items-baseline justify-between">
         <div>
-          <div className="text-sm font-semibold text-foreground">Hole {hole.hole_number}</div>
-          <div className="text-[11px] text-muted-foreground">Par {hole.par}</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Hole</div>
+          <div className="font-mono text-4xl font-bold text-foreground">#{hole.hole_number}</div>
         </div>
+        <div className="text-right">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Par</div>
+          <div className="font-mono text-2xl font-semibold text-foreground">{hole.par}</div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between rounded-md bg-muted/40 p-3">
+        <span className="text-sm font-semibold text-foreground">Total strokes</span>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setStrokes((s) => Math.max(1, s - 1))}
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-foreground hover:bg-muted"
+            className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-muted"
             aria-label="Decrease strokes"
           >
-            <Minus className="h-4 w-4" />
+            <Minus className="h-5 w-5" />
           </button>
-          <div className="w-12 text-center font-mono text-xl font-semibold text-foreground">{strokes}</div>
+          <div className="w-14 text-center font-mono text-2xl font-semibold text-foreground">{strokes}</div>
           <button
             type="button"
             onClick={() => setStrokes((s) => s + 1)}
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-foreground hover:bg-muted"
+            className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-muted"
             aria-label="Increase strokes"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
           </button>
         </div>
       </div>
 
+      <div className="mt-2 flex justify-end">
+        <span
+          className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+            diff < 0
+              ? "bg-primary/15 text-primary"
+              : diff === 0
+              ? "bg-primary text-primary-foreground"
+              : diff === 1
+              ? "bg-muted text-foreground"
+              : "bg-destructive/15 text-destructive"
+          }`}
+        >
+          {diffLabel}
+        </span>
+      </div>
+
       {(isTexasScramble || players.length > 0) && (
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {isTexasScramble && (
             <label className="block text-xs">
-              <span className="text-muted-foreground">Tee shot used</span>
+              <span className="font-semibold text-foreground">Tee shot used</span>
               <select
                 value={teeShotPlayerId}
                 onChange={(e) => setTeeShotPlayerId(e.target.value)}
@@ -300,14 +457,14 @@ function HoleCard({
                 <option value="">— select player —</option>
                 {players.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name}
+                    {p.name} (used {teeShotCounts.get(p.id) ?? 0}/{tournament.tee_shot_minimum})
                   </option>
                 ))}
               </select>
             </label>
           )}
           <label className="block text-xs">
-            <span className="text-muted-foreground">Mulligan (optional)</span>
+            <span className="font-semibold text-foreground">Mulligan (optional)</span>
             <select
               value={mulliganPlayerId}
               onChange={(e) => setMulliganPlayerId(e.target.value)}
@@ -316,7 +473,7 @@ function HoleCard({
               <option value="">— none —</option>
               {players.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name}
+                  {p.name} (used {mulliganCounts.get(p.id) ?? 0}/{p.mulligans_total})
                 </option>
               ))}
             </select>
@@ -324,7 +481,7 @@ function HoleCard({
         </div>
       )}
 
-      <div className="mt-3 flex items-center justify-between">
+      <div className="mt-4 flex items-center justify-between">
         {error ? (
           <p className="text-xs text-destructive">{error}</p>
         ) : existing ? (
@@ -336,10 +493,10 @@ function HoleCard({
           type="button"
           onClick={save}
           disabled={!dirty || saving}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-          {existing ? (dirty ? "Update" : "Saved") : "Save"}
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          {existing ? (dirty ? "Update & next" : "Saved") : "Save & next"}
         </button>
       </div>
     </div>
