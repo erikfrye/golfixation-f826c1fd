@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, ChevronLeft, RefreshCw, ChevronDown, ChevronRight, X } from "lucide-react";
@@ -530,7 +530,7 @@ function HoleDetailModal({
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center justify-between border-b border-border/60 pb-2 last:border-b-0 last:pb-0">
       <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
