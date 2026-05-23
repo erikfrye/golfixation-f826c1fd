@@ -44,6 +44,7 @@ function TeamLayout() {
             <Link
               to="/tournament/$id"
               params={{ id: tournamentId }}
+              search={{ teamId }}
               className="flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
             >
               <Trophy className="h-5 w-5" />
