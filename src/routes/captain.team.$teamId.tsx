@@ -12,9 +12,8 @@ type Team = {
   id: string;
   name: string;
   tournament_id: string;
-  tee_shot_minimum: number;
 };
-type Tournament = { id: string; name: string; num_holes: number; format: string };
+type Tournament = { id: string; name: string; num_holes: number; format: string; tee_shot_minimum: number };
 type Hole = { hole_number: number; par: number };
 type Player = { id: string; name: string; mulligans_total: number };
 type Score = {
@@ -33,7 +32,7 @@ function TeamScoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, tournament_id, tee_shot_minimum")
+        .select("id, name, tournament_id")
         .eq("id", teamId)
         .maybeSingle();
       if (error) throw error;
@@ -49,7 +48,7 @@ function TeamScoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, num_holes, format")
+        .select("id, name, num_holes, format, tee_shot_minimum")
         .eq("id", tournamentId!)
         .maybeSingle();
       if (error) throw error;
@@ -162,19 +161,19 @@ function TeamScoring() {
           {isTexasScramble && players.length > 0 && (
             <div className="mt-4 rounded-lg border border-border bg-card p-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Tee shots used (min {team.tee_shot_minimum} per player)
+                Tee shots used (min {tournament.tee_shot_minimum} per player)
               </h2>
               <ul className="mt-2 space-y-1.5">
                 {players.map((p) => {
                   const used = teeShotCounts.get(p.id) ?? 0;
-                  const meetsMin = used >= team.tee_shot_minimum;
+                  const meetsMin = used >= tournament.tee_shot_minimum;
                   const mul = mulliganCounts.get(p.id) ?? 0;
                   return (
                     <li key={p.id} className="flex items-center justify-between text-sm">
                       <span className="font-medium text-foreground">{p.name}</span>
                       <span className="flex items-center gap-3 font-mono text-xs">
                         <span className={meetsMin ? "text-primary" : "text-muted-foreground"}>
-                          tee {used}/{team.tee_shot_minimum}
+                          tee {used}/{tournament.tee_shot_minimum}
                         </span>
                         <span className={mul > p.mulligans_total ? "text-destructive" : "text-muted-foreground"}>
                           mull {mul}/{p.mulligans_total}
