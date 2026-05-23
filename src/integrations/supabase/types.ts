@@ -180,7 +180,6 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          tee_shot_minimum: number
           tournament_id: string
         }
         Insert: {
@@ -188,7 +187,6 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
-          tee_shot_minimum?: number
           tournament_id: string
         }
         Update: {
@@ -196,7 +194,6 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          tee_shot_minimum?: number
           tournament_id?: string
         }
         Relationships: [
@@ -219,6 +216,7 @@ export type Database = {
           num_holes: number
           override_code: string
           status: string
+          tee_shot_minimum: number
         }
         Insert: {
           created_at?: string
@@ -229,6 +227,7 @@ export type Database = {
           num_holes?: number
           override_code: string
           status?: string
+          tee_shot_minimum?: number
         }
         Update: {
           created_at?: string
@@ -239,6 +238,7 @@ export type Database = {
           num_holes?: number
           override_code?: string
           status?: string
+          tee_shot_minimum?: number
         }
         Relationships: [
           {

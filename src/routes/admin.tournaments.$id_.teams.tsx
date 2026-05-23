@@ -12,7 +12,6 @@ type Team = {
   id: string;
   name: string;
   captain_email: string;
-  tee_shot_minimum: number;
 };
 type Player = {
   id: string;
@@ -30,7 +29,7 @@ function ManageTeams() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, captain_email, tee_shot_minimum")
+        .select("id, name, captain_email")
         .eq("tournament_id", id)
         .order("created_at");
       if (error) throw error;
@@ -64,7 +63,6 @@ function ManageTeams() {
       tournament_id: id,
       name: newTeamName,
       captain_email: newCaptainEmail.toLowerCase(),
-      tee_shot_minimum: 1,
     });
     if (error) return alert(error.message);
     setNewTeamName("");
@@ -172,19 +170,6 @@ function ManageTeams() {
                       }
                       className="rounded-md border border-input bg-background px-2 py-1.5 text-xs"
                     />
-                    <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                      Tee min
-                      <input
-                        type="number"
-                        min={0}
-                        defaultValue={team.tee_shot_minimum}
-                        onBlur={(e) => {
-                          const n = parseInt(e.target.value) || 0;
-                          if (n !== team.tee_shot_minimum) updateTeam(team.id, { tee_shot_minimum: n });
-                        }}
-                        className="w-14 rounded-md border border-input bg-background px-1.5 py-1 text-center text-sm"
-                      />
-                    </label>
                   </div>
                   <button
                     onClick={() => removeTeam(team.id)}

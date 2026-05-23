@@ -19,7 +19,7 @@ function EditTournament() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status, num_holes, format, override_code")
+        .select("id, name, status, num_holes, format, override_code, tee_shot_minimum")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -43,6 +43,7 @@ function EditTournament() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState("draft");
   const [code, setCode] = useState("");
+  const [teeMin, setTeeMin] = useState(1);
   const [holes, setHoles] = useState<HoleRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -52,6 +53,7 @@ function EditTournament() {
       setName(tQ.data.name);
       setStatus(tQ.data.status);
       setCode(tQ.data.override_code);
+      setTeeMin(tQ.data.tee_shot_minimum ?? 1);
     }
   }, [tQ.data]);
 
@@ -68,7 +70,7 @@ function EditTournament() {
     try {
       const { error: tErr } = await supabase
         .from("tournaments")
-        .update({ name, status, override_code: code.toUpperCase() })
+        .update({ name, status, override_code: code.toUpperCase(), tee_shot_minimum: teeMin })
         .eq("id", id);
       if (tErr) throw tErr;
 
@@ -141,6 +143,22 @@ function EditTournament() {
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             className="w-40 rounded-md border border-input bg-background px-3 py-2 font-mono text-sm uppercase"
           />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-foreground">
+            Tee shot minimum per player
+          </span>
+          <input
+            type="number"
+            min={0}
+            value={teeMin}
+            onChange={(e) => setTeeMin(parseInt(e.target.value) || 0)}
+            className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Applies to all teams in this tournament.
+          </p>
         </label>
 
         <div>
