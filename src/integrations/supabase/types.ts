@@ -14,13 +14,252 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admins: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      hole_scores: {
+        Row: {
+          hole_number: number
+          id: string
+          mulligan_player_id: string | null
+          strokes: number
+          team_id: string
+          tee_shot_player_id: string | null
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          hole_number: number
+          id?: string
+          mulligan_player_id?: string | null
+          strokes: number
+          team_id: string
+          tee_shot_player_id?: string | null
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          hole_number?: number
+          id?: string
+          mulligan_player_id?: string | null
+          strokes?: number
+          team_id?: string
+          tee_shot_player_id?: string | null
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hole_scores_mulligan_player_id_fkey"
+            columns: ["mulligan_player_id"]
+            isOneToOne: false
+            referencedRelation: "team_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hole_scores_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hole_scores_tee_shot_player_id_fkey"
+            columns: ["tee_shot_player_id"]
+            isOneToOne: false
+            referencedRelation: "team_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hole_scores_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      holes: {
+        Row: {
+          handicap: number | null
+          hole_number: number
+          id: string
+          par: number
+          tournament_id: string
+        }
+        Insert: {
+          handicap?: number | null
+          hole_number: number
+          id?: string
+          par?: number
+          tournament_id: string
+        }
+        Update: {
+          handicap?: number | null
+          hole_number?: number
+          id?: string
+          par?: number
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holes_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_players: {
+        Row: {
+          created_at: string
+          id: string
+          mulligans_total: number
+          mulligans_used: number
+          name: string
+          team_id: string
+          tee_shots_used: number
+          tournament_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mulligans_total?: number
+          mulligans_used?: number
+          name: string
+          team_id: string
+          tee_shots_used?: number
+          tournament_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mulligans_total?: number
+          mulligans_used?: number
+          name?: string
+          team_id?: string
+          tee_shots_used?: number
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_players_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          captain_email: string
+          created_at: string
+          id: string
+          name: string
+          tee_shot_minimum: number
+          tournament_id: string
+        }
+        Insert: {
+          captain_email: string
+          created_at?: string
+          id?: string
+          name: string
+          tee_shot_minimum?: number
+          tournament_id: string
+        }
+        Update: {
+          captain_email?: string
+          created_at?: string
+          id?: string
+          name?: string
+          tee_shot_minimum?: number
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          format: string
+          id: string
+          name: string
+          num_holes: number
+          override_code: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          format?: string
+          id?: string
+          name: string
+          num_holes?: number
+          override_code: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          format?: string
+          id?: string
+          name?: string
+          num_holes?: number
+          override_code?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "admins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_team_captain: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
