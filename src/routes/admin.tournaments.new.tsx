@@ -18,7 +18,7 @@ function NewTournament() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [numHoles, setNumHoles] = useState(18);
-  const [format, setFormat] = useState<"texas_scramble" | "scramble">("texas_scramble");
+  const [format, setFormat] = useState<string>("texas_scramble");
   const [code, setCode] = useState(generateCode());
   const [mulligansEnabled, setMulligansEnabled] = useState(true);
   const [startDate, setStartDate] = useState("");
@@ -93,11 +93,15 @@ function NewTournament() {
         <Field label="Format">
           <select
             value={format}
-            onChange={(e) => setFormat(e.target.value as "texas_scramble" | "scramble")}
+            onChange={(e) => setFormat(e.target.value)}
             className="rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
-            <option value="texas_scramble">Texas Scramble</option>
             <option value="scramble">Scramble</option>
+            <option value="texas_scramble">Texas Scramble</option>
+            <option value="match_play">Match Play</option>
+            <option value="stroke_play">Stroke Play</option>
+            <option value="best_ball">Best Ball (Four Ball)</option>
+            <option value="alternate_shot">Alternate Shot</option>
           </select>
         </Field>
         <Field label="Start date & time">
