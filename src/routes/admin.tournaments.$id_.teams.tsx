@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronLeft, Plus, Trash2, UserPlus } from "lucide-react";
+import { adminListTeams } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/tournaments/$id_/teams")({
   component: ManageTeams,
@@ -26,15 +27,7 @@ function ManageTeams() {
 
   const teamsQ = useQuery({
     queryKey: ["admin", "teams", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("teams")
-        .select("id, name, captain_email")
-        .eq("tournament_id", id)
-        .order("created_at");
-      if (error) throw error;
-      return (data ?? []) as Team[];
-    },
+    queryFn: async () => (await adminListTeams({ data: { tournamentId: id } })) as Team[],
   });
 
   const playersQ = useQuery({
