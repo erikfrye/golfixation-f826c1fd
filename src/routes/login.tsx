@@ -61,103 +61,72 @@ function LoginPage() {
 }
 
 function CaptainOtpForm() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [stage, setStage] = useState<"email" | "code">("email");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
 
-  const sendCode = async (e: React.FormEvent) => {
+  const sendLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/captain`,
+      },
     });
     setLoading(false);
     if (error) {
       setError(error.message);
       return;
     }
-    setStage("code");
+    setSent(true);
   };
 
-  const verify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email: email.trim().toLowerCase(),
-      token: code.trim(),
-      type: "email",
-    });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    navigate({ to: "/captain" });
-  };
-
-  if (stage === "email") {
+  if (sent) {
     return (
-      <form onSubmit={sendCode} className="space-y-3">
-        <p className="text-xs text-muted-foreground">
-          Enter the email your tournament admin registered for your team.
+      <div className="space-y-3">
+        <p className="text-sm text-foreground">
+          Check <span className="font-medium">{email}</span> for a sign-in link.
         </p>
-        <input
-          type="email"
-          required
-          autoFocus
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-        />
+        <p className="text-xs text-muted-foreground">
+          Tap the link in the email to open your captain dashboard.
+        </p>
         <button
-          disabled={loading}
-          className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          type="button"
+          onClick={() => {
+            setSent(false);
+            setError(null);
+          }}
+          className="w-full text-xs text-muted-foreground hover:text-foreground"
         >
-          {loading ? "Sending…" : "Email me a code"}
+          ← Use a different email
         </button>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-      </form>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={verify} className="space-y-3">
+    <form onSubmit={sendLink} className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Enter the 6-digit code we sent to <span className="font-medium text-foreground">{email}</span>.
+        Enter the email your tournament admin registered for your team.
       </p>
       <input
-        inputMode="numeric"
-        pattern="[0-9]*"
+        type="email"
         required
         autoFocus
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        placeholder="123456"
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-center font-mono text-lg tracking-widest"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="you@example.com"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
       />
       <button
         disabled={loading}
         className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
       >
-        {loading ? "Verifying…" : "Sign in"}
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          setStage("email");
-          setCode("");
-          setError(null);
-        }}
-        className="w-full text-xs text-muted-foreground hover:text-foreground"
-      >
-        ← Use a different email
+        {loading ? "Sending…" : "Email me a sign-in link"}
       </button>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </form>
