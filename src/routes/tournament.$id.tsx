@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, ChevronLeft, RefreshCw, ChevronDown, ChevronRight, X, Pencil, Trophy } from "lucide-react";
+import { AboutButton } from "@/components/about-dialog";
 
 export const Route = createFileRoute("/tournament/$id")({
   head: ({ params }) => ({
@@ -23,6 +24,7 @@ type Tournament = {
   status: string;
   num_holes: number;
   format: string;
+  about_content: string | null;
 };
 type Team = { id: string; name: string };
 type Hole = { hole_number: number; par: number };
@@ -47,7 +49,7 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status, num_holes, format")
+        .select("id, name, status, num_holes, format, about_content")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -172,6 +174,7 @@ function TournamentPage() {
             <ChevronLeft className="h-4 w-4" />
             Tournaments
           </Link>
+          <div className="flex items-center gap-1">
           <button
             onClick={() => {
               scoresQ.refetch();
@@ -183,6 +186,8 @@ function TournamentPage() {
             <RefreshCw className="h-3.5 w-3.5" />
             Refresh
           </button>
+          <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
+          </div>
         </div>
       </header>
 
