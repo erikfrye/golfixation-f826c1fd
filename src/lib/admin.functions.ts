@@ -38,7 +38,7 @@ export const adminGetTournament = createServerFn({ method: "POST" })
     const admin = await assertAdmin(context.userId);
     const { data: row, error } = await admin
       .from("tournaments")
-      .select("id, name, status, num_holes, format, override_code, tee_shot_minimum, about_content")
+      .select("id, name, status, num_holes, format, override_code, tee_shot_minimum, about_content, mulligans_enabled, start_date, start_format")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -53,7 +53,7 @@ export const adminListTeams = createServerFn({ method: "POST" })
     const admin = await assertAdmin(context.userId);
     const { data: rows, error } = await admin
       .from("teams")
-      .select("id, name, captain_email")
+      .select("id, name, captain_email, start_hole")
       .eq("tournament_id", data.tournamentId)
       .order("created_at");
     if (error) throw new Error(error.message);

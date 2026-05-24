@@ -38,6 +38,9 @@ function EditTournament() {
   const [code, setCode] = useState("");
   const [teeMin, setTeeMin] = useState(1);
   const [about, setAbout] = useState("");
+  const [mulligansEnabled, setMulligansEnabled] = useState(true);
+  const [startDate, setStartDate] = useState("");
+  const [startFormat, setStartFormat] = useState<"tee_time" | "shotgun">("tee_time");
   const [holes, setHoles] = useState<HoleRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -49,6 +52,13 @@ function EditTournament() {
       setCode(tQ.data.override_code);
       setTeeMin(tQ.data.tee_shot_minimum ?? 1);
       setAbout(tQ.data.about_content ?? "");
+      setMulligansEnabled(tQ.data.mulligans_enabled ?? true);
+      setStartFormat((tQ.data.start_format as "tee_time" | "shotgun") ?? "tee_time");
+      setStartDate(
+        tQ.data.start_date
+          ? new Date(tQ.data.start_date).toISOString().slice(0, 16)
+          : "",
+      );
     }
   }, [tQ.data]);
 
@@ -71,6 +81,9 @@ function EditTournament() {
           override_code: code.toUpperCase(),
           tee_shot_minimum: teeMin,
           about_content: about.trim() ? about : null,
+          mulligans_enabled: mulligansEnabled,
+          start_date: startDate ? new Date(startDate).toISOString() : null,
+          start_format: startFormat,
         })
         .eq("id", id);
       if (tErr) throw tErr;
@@ -146,19 +159,56 @@ function EditTournament() {
           />
         </label>
 
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-foreground">
-            Tee shot minimum per player
-          </span>
+        {tQ.data.format === "texas_scramble" && (
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-foreground">
+              Tee shot minimum per player
+            </span>
+            <input
+              type="number"
+              min={0}
+              value={teeMin}
+              onChange={(e) => setTeeMin(parseInt(e.target.value) || 0)}
+              className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Applies to all teams in this tournament.
+            </p>
+          </label>
+        )}
+
+        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
           <input
-            type="number"
-            min={0}
-            value={teeMin}
-            onChange={(e) => setTeeMin(parseInt(e.target.value) || 0)}
-            className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            type="checkbox"
+            checked={mulligansEnabled}
+            onChange={(e) => setMulligansEnabled(e.target.checked)}
+            className="h-4 w-4 rounded border-input"
           />
+          Allow mulligans
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-foreground">Start date & time</span>
+          <input
+            type="datetime-local"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-foreground">Start format</span>
+          <select
+            value={startFormat}
+            onChange={(e) => setStartFormat(e.target.value as "tee_time" | "shotgun")}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="tee_time">Tee time (all start hole 1)</option>
+            <option value="shotgun">Shotgun (teams start on assigned hole)</option>
+          </select>
           <p className="mt-1 text-xs text-muted-foreground">
-            Applies to all teams in this tournament.
+            With shotgun, set each team's starting hole on the Manage teams page.
           </p>
         </label>
 
@@ -187,6 +237,7 @@ function EditTournament() {
                   min={3}
                   max={6}
                   value={h.par}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => {
                     const par = parseInt(e.target.value) || 4;
                     setHoles((prev) => prev.map((x, i) => (i === idx ? { ...x, par } : x)));

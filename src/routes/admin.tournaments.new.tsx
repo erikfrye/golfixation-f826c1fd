@@ -20,6 +20,9 @@ function NewTournament() {
   const [numHoles, setNumHoles] = useState(18);
   const [format, setFormat] = useState<"texas_scramble" | "scramble">("texas_scramble");
   const [code, setCode] = useState(generateCode());
+  const [mulligansEnabled, setMulligansEnabled] = useState(true);
+  const [startDate, setStartDate] = useState("");
+  const [startFormat, setStartFormat] = useState<"tee_time" | "shotgun">("tee_time");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +41,9 @@ function NewTournament() {
           override_code: code.toUpperCase(),
           status: "draft",
           created_by: user.user?.id ?? null,
+          mulligans_enabled: mulligansEnabled,
+          start_date: startDate ? new Date(startDate).toISOString() : null,
+          start_format: startFormat,
         })
         .select("id")
         .single();
@@ -94,6 +100,33 @@ function NewTournament() {
             <option value="scramble">Scramble</option>
           </select>
         </Field>
+        <Field label="Start date & time">
+          <input
+            type="datetime-local"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </Field>
+        <Field label="Start format">
+          <select
+            value={startFormat}
+            onChange={(e) => setStartFormat(e.target.value as "tee_time" | "shotgun")}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="tee_time">Tee time (all start hole 1)</option>
+            <option value="shotgun">Shotgun (teams start on assigned hole)</option>
+          </select>
+        </Field>
+        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <input
+            type="checkbox"
+            checked={mulligansEnabled}
+            onChange={(e) => setMulligansEnabled(e.target.checked)}
+            className="h-4 w-4 rounded border-input"
+          />
+          Allow mulligans
+        </label>
         <Field label="Captain override code">
           <div className="flex gap-2">
             <input

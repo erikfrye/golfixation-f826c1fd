@@ -198,6 +198,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          start_hole: number
           tournament_id: string
         }
         Insert: {
@@ -205,6 +206,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          start_hole?: number
           tournament_id: string
         }
         Update: {
@@ -212,6 +214,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          start_hole?: number
           tournament_id?: string
         }
         Relationships: [
@@ -231,9 +234,12 @@ export type Database = {
           created_by: string | null
           format: string
           id: string
+          mulligans_enabled: boolean
           name: string
           num_holes: number
           override_code: string
+          start_date: string | null
+          start_format: string
           status: string
           tee_shot_minimum: number
         }
@@ -243,9 +249,12 @@ export type Database = {
           created_by?: string | null
           format?: string
           id?: string
+          mulligans_enabled?: boolean
           name: string
           num_holes?: number
           override_code: string
+          start_date?: string | null
+          start_format?: string
           status?: string
           tee_shot_minimum?: number
         }
@@ -255,9 +264,12 @@ export type Database = {
           created_by?: string | null
           format?: string
           id?: string
+          mulligans_enabled?: boolean
           name?: string
           num_holes?: number
           override_code?: string
+          start_date?: string | null
+          start_format?: string
           status?: string
           tee_shot_minimum?: number
         }

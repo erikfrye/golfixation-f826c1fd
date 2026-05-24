@@ -12,8 +12,16 @@ type Team = {
   id: string;
   name: string;
   tournament_id: string;
+  start_hole: number;
 };
-type Tournament = { id: string; name: string; num_holes: number; format: string; tee_shot_minimum: number };
+type Tournament = {
+  id: string;
+  name: string;
+  num_holes: number;
+  format: string;
+  tee_shot_minimum: number;
+  mulligans_enabled: boolean;
+};
 type Hole = { hole_number: number; par: number };
 type Player = { id: string; name: string; mulligans_total: number };
 type Score = {
@@ -26,7 +34,7 @@ type Score = {
 
 function TeamScoring() {
   const { teamId } = Route.useParams();
-  const [currentHole, setCurrentHole] = useState<number>(1);
+  const [currentHole, setCurrentHole] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const teamQ = useQuery({
@@ -34,7 +42,7 @@ function TeamScoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, tournament_id")
+        .select("id, name, tournament_id, start_hole")
         .eq("id", teamId)
         .maybeSingle();
       if (error) throw error;
@@ -50,7 +58,7 @@ function TeamScoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, num_holes, format, tee_shot_minimum")
+        .select("id, name, num_holes, format, tee_shot_minimum, mulligans_enabled")
         .eq("id", tournamentId!)
         .maybeSingle();
       if (error) throw error;
@@ -128,6 +136,11 @@ function TeamScoring() {
 
   const isLoading = teamQ.isLoading || tournamentQ.isLoading || holesQ.isLoading || playersQ.isLoading || scoresQ.isLoading;
   const isTexasScramble = tournament?.format === "texas_scramble";
+  const mulligansEnabled = tournament?.mulligans_enabled ?? true;
+
+  useEffect(() => {
+    if (currentHole === null && team) setCurrentHole(team.start_hole || 1);
+  }, [team, currentHole]);
 
   const teeShotsRequiredRemaining = useMemo(() => {
     if (!tournament || !isTexasScramble) return 0;
@@ -155,9 +168,12 @@ function TeamScoring() {
   );
   const net = totalStrokes - playedPar;
 
-  const activeHole = holes.find((h) => h.hole_number === currentHole) ?? holes[0];
-  const nextHole = holes.find((h) => h.hole_number === currentHole + 1);
-  const prevHole = [...holes].reverse().find((h) => h.hole_number < currentHole);
+  const effectiveHole = currentHole ?? team?.start_hole ?? 1;
+  const activeHole = holes.find((h) => h.hole_number === effectiveHole) ?? holes[0];
+  const numHoles = tournament?.num_holes ?? holes.length;
+  const wrap = (n: number) => ((n - 1 + numHoles) % numHoles) + 1;
+  const nextHole = numHoles > 0 ? holes.find((h) => h.hole_number === wrap(effectiveHole + 1)) : undefined;
+  const prevHole = numHoles > 0 ? holes.find((h) => h.hole_number === wrap(effectiveHole - 1)) : undefined;
 
   return (
     <main className="mx-auto max-w-3xl px-4 pt-6 pb-40">
@@ -216,9 +232,11 @@ function TeamScoring() {
                         <span className={meetsMin ? "text-primary" : "text-muted-foreground"}>
                           tee {used}/{tournament.tee_shot_minimum}
                         </span>
-                        <span className={mul > p.mulligans_total ? "text-destructive" : "text-muted-foreground"}>
-                          mull {mul}/{p.mulligans_total}
-                        </span>
+                        {mulligansEnabled && (
+                          <span className={mul > p.mulligans_total ? "text-destructive" : "text-muted-foreground"}>
+                            mull {mul}/{p.mulligans_total}
+                          </span>
+                        )}
                       </span>
                     </li>
                   );
@@ -236,6 +254,7 @@ function TeamScoring() {
                 hole={activeHole}
                 players={players}
                 isTexasScramble={isTexasScramble}
+                mulligansEnabled={mulligansEnabled}
                 existing={scoreByHole.get(activeHole.hole_number) ?? null}
                 teeShotCounts={teeShotCounts}
                 mulliganCounts={mulliganCounts}
@@ -266,7 +285,7 @@ function TeamScoring() {
                 className="flex flex-1 items-center justify-center gap-2 rounded-md bg-muted px-4 py-2.5 text-sm font-medium text-foreground"
               >
                 <Grid3x3 className="h-4 w-4" />
-                Hole {currentHole}
+                Hole {effectiveHole}
               </button>
               <button
                 type="button"
@@ -284,7 +303,7 @@ function TeamScoring() {
           {pickerOpen && (
             <HolePicker
               holes={holes}
-              current={currentHole}
+              current={effectiveHole}
               scoreByHole={scoreByHole}
               onSelect={(n) => {
                 setCurrentHole(n);
@@ -370,6 +389,7 @@ function HoleCard({
   hole,
   players,
   isTexasScramble,
+  mulligansEnabled,
   existing,
   teeShotCounts,
   mulliganCounts,
@@ -382,6 +402,7 @@ function HoleCard({
   hole: Hole;
   players: Player[];
   isTexasScramble: boolean;
+  mulligansEnabled: boolean;
   existing: Score | null;
   teeShotCounts: Map<string, number>;
   mulliganCounts: Map<string, number>;
@@ -429,7 +450,7 @@ function HoleCard({
       hole_number: hole.hole_number,
       strokes,
       tee_shot_player_id: isTexasScramble ? teeShotPlayerId || null : null,
-      mulligan_player_id: mulliganPlayerId || null,
+      mulligan_player_id: mulligansEnabled ? mulliganPlayerId || null : null,
     };
     const { error } = await supabase
       .from("hole_scores")
@@ -499,7 +520,7 @@ function HoleCard({
         </span>
       </div>
 
-      {(isTexasScramble || players.length > 0) && (
+      {(isTexasScramble || (mulligansEnabled && players.length > 0)) && (
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {isTexasScramble && (
             <label className="block text-xs">
@@ -523,6 +544,7 @@ function HoleCard({
               </select>
             </label>
           )}
+          {mulligansEnabled && (
           <label className="block text-xs">
             <span className="font-semibold text-foreground">Mulligan (optional)</span>
             <select
@@ -552,6 +574,7 @@ function HoleCard({
               </p>
             )}
           </label>
+          )}
         </div>
       )}
 
