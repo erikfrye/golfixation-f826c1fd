@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, ChevronRight } from "lucide-react";
+import { adminListTournaments } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -11,14 +12,7 @@ export const Route = createFileRoute("/admin/")({
 function AdminDashboard() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "tournaments"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tournaments")
-        .select("id, name, status, num_holes, format, override_code, created_at")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => adminListTournaments(),
   });
 
   const aboutQ = useQuery({

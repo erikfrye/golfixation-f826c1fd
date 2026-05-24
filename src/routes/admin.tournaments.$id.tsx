@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronLeft, Users, Trash2 } from "lucide-react";
+import { adminGetTournament } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/tournaments/$id")({
   component: EditTournament,
@@ -16,15 +17,7 @@ function EditTournament() {
 
   const tQ = useQuery({
     queryKey: ["admin", "tournament", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tournaments")
-        .select("id, name, status, num_holes, format, override_code, tee_shot_minimum, about_content")
-        .eq("id", id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => adminGetTournament({ data: { id } }),
   });
 
   const holesQ = useQuery({
