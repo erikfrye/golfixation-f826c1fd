@@ -32,6 +32,24 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          about_content: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          about_content?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          about_content?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hole_scores: {
         Row: {
           hole_number: number
@@ -208,6 +226,7 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          about_content: string | null
           created_at: string
           created_by: string | null
           format: string
@@ -219,6 +238,7 @@ export type Database = {
           tee_shot_minimum: number
         }
         Insert: {
+          about_content?: string | null
           created_at?: string
           created_by?: string | null
           format?: string
@@ -230,6 +250,7 @@ export type Database = {
           tee_shot_minimum?: number
         }
         Update: {
+          about_content?: string | null
           created_at?: string
           created_by?: string | null
           format?: string

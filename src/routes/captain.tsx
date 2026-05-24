@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useNavigate, Link } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { Flag, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { AboutButton } from "@/components/about-dialog";
 
 export const Route = createFileRoute("/captain")({
   head: () => ({
@@ -52,6 +53,7 @@ function CaptainLayout() {
               <LogOut className="h-3.5 w-3.5" />
               Sign out
             </button>
+            <AboutButton />
           </div>
         </div>
       </header>

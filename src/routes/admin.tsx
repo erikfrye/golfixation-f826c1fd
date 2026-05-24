@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, LogOut } from "lucide-react";
+import { AboutButton } from "@/components/about-dialog";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -79,12 +80,15 @@ function AdminLayout() {
             <Flag className="h-5 w-5 text-primary" />
             <span className="text-base font-semibold tracking-tight text-foreground">Golfixation Admin</span>
           </Link>
+          <div className="flex items-center gap-1">
           <button
             onClick={signOut}
             className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <LogOut className="h-3.5 w-3.5" /> Sign out
           </button>
+          <AboutButton />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-4xl px-4 py-6">

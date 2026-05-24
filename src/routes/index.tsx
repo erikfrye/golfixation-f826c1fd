@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, Trophy, ChevronRight } from "lucide-react";
+import { AboutButton } from "@/components/about-dialog";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -30,12 +31,15 @@ function Index() {
             <Flag className="h-6 w-6 text-primary" />
             <h1 className="text-xl font-bold tracking-tight text-foreground">Golfixation</h1>
           </div>
+          <div className="flex items-center gap-1">
           <Link
             to="/login"
             className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             Login
           </Link>
+          <AboutButton />
+          </div>
         </div>
       </header>
 
