@@ -142,6 +142,10 @@ function TournamentPage() {
       return { team, holesPlayed, totalStrokes, net };
     });
     rows.sort((a, b) => {
+      // Teams with no scores entered always sort to the bottom
+      const aEmpty = a.holesPlayed === 0;
+      const bEmpty = b.holesPlayed === 0;
+      if (aEmpty !== bEmpty) return aEmpty ? 1 : -1;
       // Only-played-holes ranking: lowest net first, tiebreaker more holes played
       if (a.net !== b.net) return a.net - b.net;
       return b.holesPlayed - a.holesPlayed;
