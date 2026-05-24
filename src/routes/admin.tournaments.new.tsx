@@ -20,6 +20,9 @@ function NewTournament() {
   const [numHoles, setNumHoles] = useState(18);
   const [format, setFormat] = useState<"texas_scramble" | "scramble">("texas_scramble");
   const [code, setCode] = useState(generateCode());
+  const [mulligansEnabled, setMulligansEnabled] = useState(true);
+  const [startDate, setStartDate] = useState("");
+  const [startFormat, setStartFormat] = useState<"tee_time" | "shotgun">("tee_time");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +41,9 @@ function NewTournament() {
           override_code: code.toUpperCase(),
           status: "draft",
           created_by: user.user?.id ?? null,
+          mulligans_enabled: mulligansEnabled,
+          start_date: startDate ? new Date(startDate).toISOString() : null,
+          start_format: startFormat,
         })
         .select("id")
         .single();
