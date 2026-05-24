@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronLeft, Plus, Trash2, UserPlus } from "lucide-react";
-import { adminListTeams } from "@/lib/admin.functions";
+import { adminListTeams, adminGetTournament } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/tournaments/$id_/teams")({
   component: ManageTeams,
@@ -13,6 +13,7 @@ type Team = {
   id: string;
   name: string;
   captain_email: string;
+  start_hole: number;
 };
 type Player = {
   id: string;
@@ -24,6 +25,13 @@ type Player = {
 function ManageTeams() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
+
+  const tournamentQ = useQuery({
+    queryKey: ["admin", "tournament", id],
+    queryFn: () => adminGetTournament({ data: { id } }),
+  });
+  const isShotgun = tournamentQ.data?.start_format === "shotgun";
+  const numHoles = tournamentQ.data?.num_holes ?? 18;
 
   const teamsQ = useQuery({
     queryKey: ["admin", "teams", id],
@@ -163,6 +171,23 @@ function ManageTeams() {
                       }
                       className="rounded-md border border-input bg-background px-2 py-1.5 text-xs"
                     />
+                    {isShotgun && (
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        Start hole
+                        <input
+                          type="number"
+                          min={1}
+                          max={numHoles}
+                          defaultValue={team.start_hole ?? 1}
+                          onFocus={(e) => e.target.select()}
+                          onBlur={(e) => {
+                            const n = Math.max(1, Math.min(numHoles, parseInt(e.target.value) || 1));
+                            if (n !== team.start_hole) updateTeam(team.id, { start_hole: n });
+                          }}
+                          className="w-16 rounded-md border border-input bg-background px-2 py-1 text-center text-sm"
+                        />
+                      </label>
+                    )}
                   </div>
                   <button
                     onClick={() => removeTeam(team.id)}
