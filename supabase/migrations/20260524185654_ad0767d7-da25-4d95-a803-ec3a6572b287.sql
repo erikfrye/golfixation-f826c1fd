@@ -1,0 +1,2 @@
+ALTER TABLE public.tournaments DROP CONSTRAINT tournaments_format_check;
+ALTER TABLE public.tournaments ADD CONSTRAINT tournaments_format_check CHECK (format = ANY (ARRAY['scramble','texas_scramble','match_play','stroke_play','best_ball','alternate_shot']));
