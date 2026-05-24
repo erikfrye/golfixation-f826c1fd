@@ -35,6 +35,7 @@ function EditTournament() {
 
   const [name, setName] = useState("");
   const [status, setStatus] = useState("draft");
+  const [format, setFormat] = useState<string>("texas_scramble");
   const [code, setCode] = useState("");
   const [teeMin, setTeeMin] = useState(1);
   const [about, setAbout] = useState("");
@@ -49,6 +50,7 @@ function EditTournament() {
     if (tQ.data) {
       setName(tQ.data.name);
       setStatus(tQ.data.status);
+      setFormat(tQ.data.format);
       setCode(tQ.data.override_code);
       setTeeMin(tQ.data.tee_shot_minimum ?? 1);
       setAbout(tQ.data.about_content ?? "");
@@ -78,6 +80,7 @@ function EditTournament() {
         .update({
           name,
           status,
+          format,
           override_code: code.toUpperCase(),
           tee_shot_minimum: teeMin,
           about_content: about.trim() ? about : null,
@@ -151,6 +154,22 @@ function EditTournament() {
         </label>
 
         <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-foreground">Format</span>
+          <select
+            value={format}
+            onChange={(e) => setFormat(e.target.value)}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="scramble">Scramble</option>
+            <option value="texas_scramble">Texas Scramble</option>
+            <option value="match_play">Match Play</option>
+            <option value="stroke_play">Stroke Play</option>
+            <option value="best_ball">Best Ball (Four Ball)</option>
+            <option value="alternate_shot">Alternate Shot</option>
+          </select>
+        </label>
+
+        <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-foreground">Override code</span>
           <input
             value={code}
@@ -159,7 +178,7 @@ function EditTournament() {
           />
         </label>
 
-        {tQ.data.format === "texas_scramble" && (
+        {format === "texas_scramble" && (
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-foreground">
               Tee shot minimum per player
