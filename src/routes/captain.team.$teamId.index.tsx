@@ -232,9 +232,11 @@ function TeamScoring() {
                         <span className={meetsMin ? "text-primary" : "text-muted-foreground"}>
                           tee {used}/{tournament.tee_shot_minimum}
                         </span>
-                        <span className={mul > p.mulligans_total ? "text-destructive" : "text-muted-foreground"}>
-                          mull {mul}/{p.mulligans_total}
-                        </span>
+                        {mulligansEnabled && (
+                          <span className={mul > p.mulligans_total ? "text-destructive" : "text-muted-foreground"}>
+                            mull {mul}/{p.mulligans_total}
+                          </span>
+                        )}
                       </span>
                     </li>
                   );
@@ -448,7 +450,7 @@ function HoleCard({
       hole_number: hole.hole_number,
       strokes,
       tee_shot_player_id: isTexasScramble ? teeShotPlayerId || null : null,
-      mulligan_player_id: mulliganPlayerId || null,
+      mulligan_player_id: mulligansEnabled ? mulliganPlayerId || null : null,
     };
     const { error } = await supabase
       .from("hole_scores")
