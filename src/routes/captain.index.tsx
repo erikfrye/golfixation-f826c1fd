@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ChevronRight, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { listMyCaptainTeams } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/captain/")({
   component: CaptainIndex,
@@ -25,14 +26,7 @@ function CaptainIndex() {
   const { data, isLoading } = useQuery({
     queryKey: ["captain-teams", email],
     enabled: !!email,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("teams")
-        .select("id, name, tournament_id, tournaments(id, name, status, num_holes)")
-        .ilike("captain_email", email!);
-      if (error) throw error;
-      return (data ?? []) as unknown as CaptainTeam[];
-    },
+    queryFn: async () => (await listMyCaptainTeams()) as unknown as CaptainTeam[],
   });
 
   return (
