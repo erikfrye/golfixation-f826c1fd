@@ -38,6 +38,9 @@ function EditTournament() {
   const [code, setCode] = useState("");
   const [teeMin, setTeeMin] = useState(1);
   const [about, setAbout] = useState("");
+  const [mulligansEnabled, setMulligansEnabled] = useState(true);
+  const [startDate, setStartDate] = useState("");
+  const [startFormat, setStartFormat] = useState<"tee_time" | "shotgun">("tee_time");
   const [holes, setHoles] = useState<HoleRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -49,6 +52,13 @@ function EditTournament() {
       setCode(tQ.data.override_code);
       setTeeMin(tQ.data.tee_shot_minimum ?? 1);
       setAbout(tQ.data.about_content ?? "");
+      setMulligansEnabled(tQ.data.mulligans_enabled ?? true);
+      setStartFormat((tQ.data.start_format as "tee_time" | "shotgun") ?? "tee_time");
+      setStartDate(
+        tQ.data.start_date
+          ? new Date(tQ.data.start_date).toISOString().slice(0, 16)
+          : "",
+      );
     }
   }, [tQ.data]);
 
@@ -71,6 +81,9 @@ function EditTournament() {
           override_code: code.toUpperCase(),
           tee_shot_minimum: teeMin,
           about_content: about.trim() ? about : null,
+          mulligans_enabled: mulligansEnabled,
+          start_date: startDate ? new Date(startDate).toISOString() : null,
+          start_format: startFormat,
         })
         .eq("id", id);
       if (tErr) throw tErr;
