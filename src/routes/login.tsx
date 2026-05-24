@@ -43,7 +43,7 @@ function LoginPage() {
                 tab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
               }`}
             >
-              {t === "captain" ? "Email code" : t === "override" ? "Override code" : "Admin"}
+              {t === "captain" ? "Email link" : t === "override" ? "Override code" : "Admin"}
             </button>
           ))}
         </div>
