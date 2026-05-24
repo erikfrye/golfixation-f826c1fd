@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Info, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 type AboutButtonProps = {
@@ -52,7 +53,7 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
       >
         <Info className="h-5 w-5" />
       </button>
-      {open && (
+      {open && typeof document !== "undefined" && createPortal(
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-foreground/40 p-4"
           onClick={() => setOpen(false)}
@@ -90,7 +91,8 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
               .
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
