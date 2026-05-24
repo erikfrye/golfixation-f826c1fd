@@ -120,7 +120,7 @@ function CaptainOtpForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@example.com"
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-base"
       />
       <button
         disabled={loading}
@@ -171,7 +171,7 @@ function OverrideForm() {
         value={code}
         onChange={(e) => setCode(e.target.value.toUpperCase())}
         placeholder="OVERRIDE CODE"
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-center font-mono text-sm tracking-wider"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-center font-mono text-base tracking-wider"
       />
       <input
         type="email"
@@ -179,7 +179,7 @@ function OverrideForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="captain email"
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-base"
       />
       <button
         disabled={loading}
