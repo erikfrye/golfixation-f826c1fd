@@ -445,7 +445,7 @@ function HoleCard({
 
   const diff = strokes - hole.par;
   const diffLabel =
-    diff === 1 ? "PAR" : diff === -1 ? "BIRDIE" : diff === -2 ? "EAGLE" : diff <= -3 ? "ALBATROSS" : diff === 1 ? "BOGEY" : diff === 2 ? "DBL BOGEY" : `+${diff}`;
+    diff === 0 ? "PAR" : diff === -1 ? "BIRDIE" : diff === -2 ? "EAGLE" : diff <= -3 ? "ALBATROSS" : diff === 1 ? "BOGEY" : diff === 2 ? "DBL BOGEY" : `+${diff}`;
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
