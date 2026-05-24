@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, ChevronRight } from "lucide-react";
 
@@ -20,8 +21,63 @@ function AdminDashboard() {
     },
   });
 
+  const aboutQ = useQuery({
+    queryKey: ["admin", "app_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("about_content")
+        .eq("id", "app")
+        .maybeSingle();
+      if (error) throw error;
+      return data?.about_content ?? "";
+    },
+  });
+
+  const [about, setAbout] = useState("");
+  const [savingAbout, setSavingAbout] = useState(false);
+  const [aboutMsg, setAboutMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (aboutQ.data !== undefined) setAbout(aboutQ.data);
+  }, [aboutQ.data]);
+
+  const saveAbout = async () => {
+    setSavingAbout(true);
+    setAboutMsg(null);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ id: "app", about_content: about, updated_at: new Date().toISOString() });
+    setSavingAbout(false);
+    setAboutMsg(error ? error.message : "Saved");
+  };
+
   return (
     <div>
+      <div className="mb-6 rounded-lg border border-border bg-card p-5">
+        <h2 className="mb-2 text-lg font-semibold text-foreground">App About</h2>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Shown in the info modal across the app. Tournaments can override this with their own text.
+        </p>
+        <textarea
+          value={about}
+          onChange={(e) => setAbout(e.target.value)}
+          rows={5}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          placeholder="About this app…"
+        />
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            onClick={saveAbout}
+            disabled={savingAbout}
+            className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+          >
+            {savingAbout ? "Saving…" : "Save About"}
+          </button>
+          {aboutMsg && <span className="text-xs text-muted-foreground">{aboutMsg}</span>}
+        </div>
+      </div>
+
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Tournaments</h1>
         <Link
