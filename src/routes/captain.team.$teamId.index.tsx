@@ -252,6 +252,7 @@ function TeamScoring() {
                 hole={activeHole}
                 players={players}
                 isTexasScramble={isTexasScramble}
+                mulligansEnabled={mulligansEnabled}
                 existing={scoreByHole.get(activeHole.hole_number) ?? null}
                 teeShotCounts={teeShotCounts}
                 mulliganCounts={mulliganCounts}
@@ -386,6 +387,7 @@ function HoleCard({
   hole,
   players,
   isTexasScramble,
+  mulligansEnabled,
   existing,
   teeShotCounts,
   mulliganCounts,
@@ -398,6 +400,7 @@ function HoleCard({
   hole: Hole;
   players: Player[];
   isTexasScramble: boolean;
+  mulligansEnabled: boolean;
   existing: Score | null;
   teeShotCounts: Map<string, number>;
   mulliganCounts: Map<string, number>;
@@ -515,7 +518,7 @@ function HoleCard({
         </span>
       </div>
 
-      {(isTexasScramble || players.length > 0) && (
+      {(isTexasScramble || (mulligansEnabled && players.length > 0)) && (
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {isTexasScramble && (
             <label className="block text-xs">
@@ -539,6 +542,7 @@ function HoleCard({
               </select>
             </label>
           )}
+          {mulligansEnabled && (
           <label className="block text-xs">
             <span className="font-semibold text-foreground">Mulligan (optional)</span>
             <select
@@ -568,6 +572,7 @@ function HoleCard({
               </p>
             )}
           </label>
+          )}
         </div>
       )}
 
