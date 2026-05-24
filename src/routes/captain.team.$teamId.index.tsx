@@ -129,6 +129,25 @@ function TeamScoring() {
   const isLoading = teamQ.isLoading || tournamentQ.isLoading || holesQ.isLoading || playersQ.isLoading || scoresQ.isLoading;
   const isTexasScramble = tournament?.format === "texas_scramble";
 
+  const teeShotsRequiredRemaining = useMemo(() => {
+    if (!tournament || !isTexasScramble) return 0;
+    return players.reduce((sum, p) => {
+      const used = teeShotCounts.get(p.id) ?? 0;
+      return sum + Math.max(0, tournament.tee_shot_minimum - used);
+    }, 0);
+  }, [players, teeShotCounts, tournament, isTexasScramble]);
+
+  const playersNeedingTeeShots = useMemo(() => {
+    if (!tournament || !isTexasScramble) return [] as Player[];
+    return players.filter(
+      (p) => (teeShotCounts.get(p.id) ?? 0) < tournament.tee_shot_minimum,
+    );
+  }, [players, teeShotCounts, tournament, isTexasScramble]);
+
+  const holesRemaining = (tournament?.num_holes ?? 0) - scores.length;
+  const teeShotRestrictionActive =
+    isTexasScramble && teeShotsRequiredRemaining > 0 && teeShotsRequiredRemaining >= holesRemaining;
+
   const totalStrokes = scores.reduce((s, x) => s + x.strokes, 0);
   const playedPar = scores.reduce(
     (s, x) => s + (holes.find((h) => h.hole_number === x.hole_number)?.par ?? 0),
@@ -169,6 +188,22 @@ function TeamScoring() {
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Tee shots used (min {tournament.tee_shot_minimum} per player)
               </h2>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Min tee shots remaining</span>
+                <span
+                  className={`font-mono font-semibold ${
+                    teeShotRestrictionActive ? "text-destructive" : "text-foreground"
+                  }`}
+                >
+                  {teeShotsRequiredRemaining} / {holesRemaining} holes left
+                </span>
+              </div>
+              {teeShotRestrictionActive && (
+                <p className="mt-2 rounded-md bg-destructive/10 px-2 py-1.5 text-[11px] text-destructive">
+                  Restriction: every remaining hole must use a tee shot from{" "}
+                  {playersNeedingTeeShots.map((p) => p.name).join(", ")}.
+                </p>
+              )}
               <ul className="mt-2 space-y-1.5">
                 {players.map((p) => {
                   const used = teeShotCounts.get(p.id) ?? 0;
@@ -204,6 +239,8 @@ function TeamScoring() {
                 existing={scoreByHole.get(activeHole.hole_number) ?? null}
                 teeShotCounts={teeShotCounts}
                 mulliganCounts={mulliganCounts}
+                teeShotRestrictionActive={teeShotRestrictionActive}
+                playersNeedingTeeShots={playersNeedingTeeShots}
                 onSaved={() => {
                   if (nextHole) setCurrentHole(nextHole.hole_number);
                 }}
@@ -336,6 +373,8 @@ function HoleCard({
   existing,
   teeShotCounts,
   mulliganCounts,
+  teeShotRestrictionActive,
+  playersNeedingTeeShots,
   onSaved,
 }: {
   team: Team;
@@ -346,6 +385,8 @@ function HoleCard({
   existing: Score | null;
   teeShotCounts: Map<string, number>;
   mulliganCounts: Map<string, number>;
+  teeShotRestrictionActive: boolean;
+  playersNeedingTeeShots: Player[];
   onSaved: () => void;
 }) {
   const qc = useQueryClient();
@@ -361,9 +402,23 @@ function HoleCard({
     (existing.tee_shot_player_id ?? "") !== teeShotPlayerId ||
     (existing.mulligan_player_id ?? "") !== mulliganPlayerId;
 
+  const mulliganPlayer = players.find((p) => p.id === mulliganPlayerId) ?? null;
+  const mulliganAlreadyUsed = mulliganPlayerId
+    ? (mulliganCounts.get(mulliganPlayerId) ?? 0) -
+      (existing?.mulligan_player_id === mulliganPlayerId ? 1 : 0)
+    : 0;
+  const mulliganOverLimit =
+    !!mulliganPlayer && mulliganAlreadyUsed + 1 > mulliganPlayer.mulligans_total;
+
   const save = async () => {
     if (isTexasScramble && !teeShotPlayerId) {
       setError("Select tee-shot player");
+      return;
+    }
+    if (mulliganOverLimit && mulliganPlayer) {
+      setError(
+        `${mulliganPlayer.name} has no mulligans left (${mulliganPlayer.mulligans_total} allotted, ${mulliganAlreadyUsed} already used).`,
+      );
       return;
     }
     setError(null);
@@ -449,6 +504,11 @@ function HoleCard({
           {isTexasScramble && (
             <label className="block text-xs">
               <span className="font-semibold text-foreground">Tee shot used</span>
+              {teeShotRestrictionActive && (
+                <p className="mt-1 rounded-md bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
+                  Must pick: {playersNeedingTeeShots.map((p) => p.name).join(", ")}
+                </p>
+              )}
               <select
                 value={teeShotPlayerId}
                 onChange={(e) => setTeeShotPlayerId(e.target.value)}
@@ -468,15 +528,29 @@ function HoleCard({
             <select
               value={mulliganPlayerId}
               onChange={(e) => setMulliganPlayerId(e.target.value)}
-              className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+              className={`mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm ${
+                mulliganOverLimit ? "border-destructive" : "border-input"
+              }`}
             >
               <option value="">— none —</option>
-              {players.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} (used {mulliganCounts.get(p.id) ?? 0}/{p.mulligans_total})
-                </option>
-              ))}
+              {players.map((p) => {
+                const used = mulliganCounts.get(p.id) ?? 0;
+                const effective = used - (existing?.mulligan_player_id === p.id ? 1 : 0);
+                const exhausted = effective >= p.mulligans_total;
+                return (
+                  <option key={p.id} value={p.id}>
+                    {p.name} (used {used}/{p.mulligans_total})
+                    {exhausted ? " — none left" : ""}
+                  </option>
+                );
+              })}
             </select>
+            {mulliganOverLimit && mulliganPlayer && (
+              <p className="mt-1 text-[11px] text-destructive">
+                {mulliganPlayer.name} has used all {mulliganPlayer.mulligans_total} mulligan
+                {mulliganPlayer.mulligans_total === 1 ? "" : "s"}.
+              </p>
+            )}
           </label>
         </div>
       )}
@@ -492,7 +566,7 @@ function HoleCard({
         <button
           type="button"
           onClick={save}
-          disabled={!dirty || saving}
+          disabled={!dirty || saving || mulliganOverLimit}
           className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
