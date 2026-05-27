@@ -31,6 +31,7 @@ function ManageTeams() {
     queryFn: () => adminGetTournament({ data: { id } }),
   });
   const isShotgun = tournamentQ.data?.start_format === "shotgun";
+  const mulligansEnabled = tournamentQ.data?.mulligans_enabled ?? true;
   const numHoles = tournamentQ.data?.num_holes ?? 18;
 
   const teamsQ = useQuery({
@@ -89,7 +90,7 @@ function ManageTeams() {
       tournament_id: id,
       team_id: teamId,
       name: name.trim(),
-      mulligans_total: 2,
+      mulligans_total: mulligansEnabled ? 2 : 0,
     });
     refresh();
   };
@@ -207,20 +208,22 @@ function ManageTeams() {
                         }
                         className="flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm"
                       />
-                      <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                        Mulligans
-                        <input
-                          type="number"
-                          min={0}
-                          defaultValue={p.mulligans_total}
-                          onBlur={(e) => {
-                            const n = parseInt(e.target.value) || 0;
-                            if (n !== p.mulligans_total)
-                              updatePlayer(p.id, { mulligans_total: n });
-                          }}
-                          className="w-12 rounded-md border border-input bg-background px-1.5 py-1 text-center text-sm"
-                        />
-                      </label>
+                      {mulligansEnabled && (
+                        <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                          Mulligans
+                          <input
+                            type="number"
+                            min={0}
+                            defaultValue={p.mulligans_total}
+                            onBlur={(e) => {
+                              const n = parseInt(e.target.value) || 0;
+                              if (n !== p.mulligans_total)
+                                updatePlayer(p.id, { mulligans_total: n });
+                            }}
+                            className="w-12 rounded-md border border-input bg-background px-1.5 py-1 text-center text-sm"
+                          />
+                        </label>
+                      )}
                       <button
                         onClick={() => removePlayer(p.id)}
                         className="text-muted-foreground hover:text-destructive"
