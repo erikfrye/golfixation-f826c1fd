@@ -25,11 +25,11 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <Flag className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight text-foreground">Golfixation</h1>
+            <Flag className="h-5 w-5 text-primary" />
+            <h1 className="text-sm font-semibold text-foreground">Golfixation</h1>
           </div>
           <div className="flex items-center gap-1">
           <Link

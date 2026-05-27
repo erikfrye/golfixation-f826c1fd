@@ -178,7 +178,7 @@ function TournamentPage() {
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
             <Flag className="h-5 w-5 text-primary" />
-            <span className="text-base font-bold tracking-tight text-foreground">Golfixation</span>
+            <span className="text-sm font-semibold text-foreground">Golfixation</span>
           </Link>
           <div className="flex items-center gap-1">
           <button
