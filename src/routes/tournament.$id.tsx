@@ -25,6 +25,7 @@ type Tournament = {
   num_holes: number;
   format: string;
   about_content: string | null;
+  mulligans_enabled: boolean;
 };
 type Team = { id: string; name: string };
 type Hole = { hole_number: number; par: number };
@@ -49,7 +50,7 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status, num_holes, format, about_content")
+        .select("id, name, status, num_holes, format, about_content, mulligans_enabled")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -169,6 +170,7 @@ function TournamentPage() {
     tournamentQ.isLoading || holesQ.isLoading || teamsQ.isLoading || scoresQ.isLoading;
   const tournament = tournamentQ.data;
   const totalHoles = tournament?.num_holes ?? 18;
+  const mulligansEnabled = tournament?.mulligans_enabled ?? true;
 
   return (
     <div className={`min-h-screen bg-background ${captainTeamId ? "pb-16" : ""}`}>
@@ -245,6 +247,7 @@ function TournamentPage() {
                       onCellClick={(holeNumber) =>
                         setModal({ teamId: row.team.id, hole: holeNumber })
                       }
+                      mulligansEnabled={mulligansEnabled}
                     />
                   ))}
                 </ul>
@@ -270,6 +273,7 @@ function TournamentPage() {
             score={score}
             teeShotName={score?.tee_shot_player_id ? playerById.get(score.tee_shot_player_id)?.name ?? null : null}
             mulliganName={score?.mulligan_player_id ? playerById.get(score.mulligan_player_id)?.name ?? null : null}
+            mulligansEnabled={mulligansEnabled}
             onClose={() => setModal(null)}
             onPrev={prev ? () => setModal({ teamId: modal.teamId, hole: prev.hole_number }) : null}
             onNext={next ? () => setModal({ teamId: modal.teamId, hole: next.hole_number }) : null}
@@ -308,6 +312,7 @@ function ScoreRow({
   expanded,
   onToggle,
   onCellClick,
+  mulligansEnabled,
 }: {
   row: { team: Team; holesPlayed: number; totalStrokes: number; net: number; rank: number; isTied: boolean };
   totalHoles: number;
@@ -316,6 +321,7 @@ function ScoreRow({
   expanded: boolean;
   onToggle: () => void;
   onCellClick: (holeNumber: number) => void;
+  mulligansEnabled: boolean;
 }) {
   const scoreByHole = new Map(scores.map((s) => [s.hole_number, s]));
   return (
@@ -384,7 +390,7 @@ function ScoreRow({
                             aria-label={`Hole ${h.hole_number} details`}
                           >
                             <ScoreCell strokes={s.strokes} par={h.par} />
-                            {s.mulligan_player_id && (
+                            {mulligansEnabled && s.mulligan_player_id && (
                               <span
                                 className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background"
                                 aria-label="Mulligan used"
@@ -403,8 +409,13 @@ function ScoreRow({
             </table>
           </div>
           <p className="mt-2 text-[10px] text-muted-foreground">
-            Swipe to see all holes → · Tap a score for details ·{" "}
-            <span className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-amber-500" /> mulligan
+            Swipe to see all holes → · Tap a score for details
+            {mulligansEnabled && (
+              <>
+                {" · "}
+                <span className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-amber-500" /> mulligan
+              </>
+            )}
           </p>
         </div>
       )}
@@ -429,6 +440,7 @@ function HoleDetailModal({
   score,
   teeShotName,
   mulliganName,
+  mulligansEnabled,
   onClose,
   onPrev,
   onNext,
@@ -438,6 +450,7 @@ function HoleDetailModal({
   score: Score | null;
   teeShotName: string | null;
   mulliganName: string | null;
+  mulligansEnabled: boolean;
   onClose: () => void;
   onPrev: (() => void) | null;
   onNext: (() => void) | null;
@@ -519,19 +532,21 @@ function HoleDetailModal({
                   )
                 }
               />
-              <DetailRow
-                label="Mulligan"
-                value={
-                  mulliganName ? (
-                    <span className="inline-flex items-center gap-1.5 text-foreground">
-                      <span className="h-2 w-2 rounded-full bg-amber-500" />
-                      {mulliganName}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">None</span>
-                  )
-                }
-              />
+              {mulligansEnabled && (
+                <DetailRow
+                  label="Mulligan"
+                  value={
+                    mulliganName ? (
+                      <span className="inline-flex items-center gap-1.5 text-foreground">
+                        <span className="h-2 w-2 rounded-full bg-amber-500" />
+                        {mulliganName}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">None</span>
+                    )
+                  }
+                />
+              )}
             </>
           ) : (
             <p className="text-sm text-muted-foreground">No score recorded for this hole.</p>
