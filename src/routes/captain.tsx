@@ -42,7 +42,7 @@ function CaptainLayout() {
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
           <Link to="/captain" className="flex items-center gap-2">
             <Flag className="h-5 w-5 text-primary" />
-            <span className="text-sm font-semibold text-foreground">Captain</span>
+            <span className="text-sm font-semibold text-foreground">Golfixation Captain</span>
           </Link>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="hidden sm:inline">{email}</span>
