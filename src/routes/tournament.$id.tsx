@@ -440,6 +440,7 @@ function HoleDetailModal({
   score,
   teeShotName,
   mulliganName,
+  mulligansEnabled,
   onClose,
   onPrev,
   onNext,
@@ -449,6 +450,7 @@ function HoleDetailModal({
   score: Score | null;
   teeShotName: string | null;
   mulliganName: string | null;
+  mulligansEnabled: boolean;
   onClose: () => void;
   onPrev: (() => void) | null;
   onNext: (() => void) | null;
@@ -530,19 +532,21 @@ function HoleDetailModal({
                   )
                 }
               />
-              <DetailRow
-                label="Mulligan"
-                value={
-                  mulliganName ? (
-                    <span className="inline-flex items-center gap-1.5 text-foreground">
-                      <span className="h-2 w-2 rounded-full bg-amber-500" />
-                      {mulliganName}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">None</span>
-                  )
-                }
-              />
+              {mulligansEnabled && (
+                <DetailRow
+                  label="Mulligan"
+                  value={
+                    mulliganName ? (
+                      <span className="inline-flex items-center gap-1.5 text-foreground">
+                        <span className="h-2 w-2 rounded-full bg-amber-500" />
+                        {mulliganName}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">None</span>
+                    )
+                  }
+                />
+              )}
             </>
           ) : (
             <p className="text-sm text-muted-foreground">No score recorded for this hole.</p>
