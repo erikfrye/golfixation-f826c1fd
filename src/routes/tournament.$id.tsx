@@ -312,6 +312,7 @@ function ScoreRow({
   expanded,
   onToggle,
   onCellClick,
+  mulligansEnabled,
 }: {
   row: { team: Team; holesPlayed: number; totalStrokes: number; net: number; rank: number; isTied: boolean };
   totalHoles: number;
@@ -320,6 +321,7 @@ function ScoreRow({
   expanded: boolean;
   onToggle: () => void;
   onCellClick: (holeNumber: number) => void;
+  mulligansEnabled: boolean;
 }) {
   const scoreByHole = new Map(scores.map((s) => [s.hole_number, s]));
   return (
@@ -388,7 +390,7 @@ function ScoreRow({
                             aria-label={`Hole ${h.hole_number} details`}
                           >
                             <ScoreCell strokes={s.strokes} par={h.par} />
-                            {s.mulligan_player_id && (
+                            {mulligansEnabled && s.mulligan_player_id && (
                               <span
                                 className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background"
                                 aria-label="Mulligan used"
@@ -407,8 +409,13 @@ function ScoreRow({
             </table>
           </div>
           <p className="mt-2 text-[10px] text-muted-foreground">
-            Swipe to see all holes → · Tap a score for details ·{" "}
-            <span className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-amber-500" /> mulligan
+            Swipe to see all holes → · Tap a score for details
+            {mulligansEnabled && (
+              <>
+                {" · "}
+                <span className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-amber-500" /> mulligan
+              </>
+            )}
           </p>
         </div>
       )}
