@@ -25,6 +25,7 @@ type Tournament = {
   num_holes: number;
   format: string;
   about_content: string | null;
+  mulligans_enabled: boolean;
 };
 type Team = { id: string; name: string };
 type Hole = { hole_number: number; par: number };
@@ -49,7 +50,7 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status, num_holes, format, about_content")
+        .select("id, name, status, num_holes, format, about_content, mulligans_enabled")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -169,6 +170,7 @@ function TournamentPage() {
     tournamentQ.isLoading || holesQ.isLoading || teamsQ.isLoading || scoresQ.isLoading;
   const tournament = tournamentQ.data;
   const totalHoles = tournament?.num_holes ?? 18;
+  const mulligansEnabled = tournament?.mulligans_enabled ?? true;
 
   return (
     <div className={`min-h-screen bg-background ${captainTeamId ? "pb-16" : ""}`}>
@@ -245,6 +247,7 @@ function TournamentPage() {
                       onCellClick={(holeNumber) =>
                         setModal({ teamId: row.team.id, hole: holeNumber })
                       }
+                      mulligansEnabled={mulligansEnabled}
                     />
                   ))}
                 </ul>
@@ -270,6 +273,7 @@ function TournamentPage() {
             score={score}
             teeShotName={score?.tee_shot_player_id ? playerById.get(score.tee_shot_player_id)?.name ?? null : null}
             mulliganName={score?.mulligan_player_id ? playerById.get(score.mulligan_player_id)?.name ?? null : null}
+            mulligansEnabled={mulligansEnabled}
             onClose={() => setModal(null)}
             onPrev={prev ? () => setModal({ teamId: modal.teamId, hole: prev.hole_number }) : null}
             onNext={next ? () => setModal({ teamId: modal.teamId, hole: next.hole_number }) : null}
