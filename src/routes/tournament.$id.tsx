@@ -176,9 +176,9 @@ function TournamentPage() {
     <div className={`min-h-screen bg-background ${captainTeamId ? "pb-16" : ""}`}>
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ChevronLeft className="h-4 w-4" />
-            Tournaments
+          <Link to="/" className="flex items-center gap-2">
+            <Flag className="h-5 w-5 text-primary" />
+            <span className="text-base font-bold tracking-tight text-foreground">Golfixation</span>
           </Link>
           <div className="flex items-center gap-1">
           <button
@@ -198,15 +198,19 @@ function TournamentPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-6">
+        <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Back to tournaments
+        </Link>
         {isLoading ? (
-          <div className="h-32 animate-pulse rounded-lg bg-muted" />
+          <div className="mt-4 h-32 animate-pulse rounded-lg bg-muted" />
         ) : !tournament ? (
-          <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
+          <div className="mt-4 rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
             Tournament not found.
           </div>
         ) : (
           <>
-            <div className="mb-6">
+            <div className="mt-3 mb-6">
               <div className="flex items-center gap-2">
                 <Flag className="h-5 w-5 text-primary" />
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">{tournament.name}</h1>
