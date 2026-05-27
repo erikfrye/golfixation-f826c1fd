@@ -78,7 +78,7 @@ function AdminLayout() {
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
           <Link to="/admin" className="flex items-center gap-2">
             <Flag className="h-5 w-5 text-primary" />
-            <span className="text-base font-semibold tracking-tight text-foreground">Golfixation Admin</span>
+            <span className="text-sm font-semibold text-foreground">Golfixation Admin</span>
           </Link>
           <div className="flex items-center gap-1">
           <button
