@@ -5,6 +5,9 @@ import { ChevronLeft, Minus, Plus, Check, Loader2, ChevronRight, Grid3x3, X } fr
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    from: search.from === "admin" ? ("admin" as const) : undefined,
+  }),
   component: TeamScoring,
 });
 
