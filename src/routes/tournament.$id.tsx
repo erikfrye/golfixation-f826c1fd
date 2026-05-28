@@ -74,10 +74,7 @@ function TournamentPage() {
   const teamsQ = useQuery({
     queryKey: ["teams", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("teams")
-        .select("id, name")
-        .eq("tournament_id", id);
+      const { data, error } = await supabase.from("teams").select("id, name").eq("tournament_id", id);
       if (error) throw error;
       return (data ?? []) as Team[];
     },
@@ -86,10 +83,7 @@ function TournamentPage() {
   const playersQ = useQuery({
     queryKey: ["players", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("team_players")
-        .select("id, name, team_id")
-        .eq("tournament_id", id);
+      const { data, error } = await supabase.from("team_players").select("id, name, team_id").eq("tournament_id", id);
       if (error) throw error;
       return (data ?? []) as Player[];
     },
@@ -166,8 +160,7 @@ function TournamentPage() {
     return ranked.map((r) => ({ ...r, isTied: (counts.get(r.rank) ?? 0) > 1 }));
   }, [holesQ.data, teamsQ.data, scoresQ.data]);
 
-  const isLoading =
-    tournamentQ.isLoading || holesQ.isLoading || teamsQ.isLoading || scoresQ.isLoading;
+  const isLoading = tournamentQ.isLoading || holesQ.isLoading || teamsQ.isLoading || scoresQ.isLoading;
   const tournament = tournamentQ.data;
   const totalHoles = tournament?.num_holes ?? 18;
   const mulligansEnabled = tournament?.mulligans_enabled ?? true;
@@ -181,18 +174,18 @@ function TournamentPage() {
             <span className="text-sm font-semibold text-foreground">Golfixation</span>
           </Link>
           <div className="flex items-center gap-1">
-          <button
-            onClick={() => {
-              scoresQ.refetch();
-              setLastUpdated(new Date());
-            }}
-            className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label="Refresh"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Refresh
-          </button>
-          <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
+            <button
+              onClick={() => {
+                scoresQ.refetch();
+                setLastUpdated(new Date());
+              }}
+              className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="Refresh"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Refresh
+            </button>
+            <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
           </div>
         </div>
       </header>
@@ -212,12 +205,11 @@ function TournamentPage() {
           <>
             <div className="mt-3 mb-6">
               <div className="flex items-center gap-2">
-                <Flag className="h-5 w-5 text-primary" />
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">{tournament.name}</h1>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {tournament.format === "texas_scramble" ? "Texas Scramble" : "Scramble"} · {tournament.num_holes} holes ·{" "}
-                <span className="capitalize">{tournament.status}</span>
+                {tournament.format === "texas_scramble" ? "Texas Scramble" : "Scramble"} · {tournament.num_holes} holes
+                · <span className="capitalize">{tournament.status}</span>
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground">
                 Last updated {lastUpdated.toLocaleTimeString()}
@@ -245,12 +237,8 @@ function TournamentPage() {
                       holes={holesQ.data ?? []}
                       scores={(scoresQ.data ?? []).filter((s) => s.team_id === row.team.id)}
                       expanded={expandedTeam === row.team.id}
-                      onToggle={() =>
-                        setExpandedTeam(expandedTeam === row.team.id ? null : row.team.id)
-                      }
-                      onCellClick={(holeNumber) =>
-                        setModal({ teamId: row.team.id, hole: holeNumber })
-                      }
+                      onToggle={() => setExpandedTeam(expandedTeam === row.team.id ? null : row.team.id)}
+                      onCellClick={(holeNumber) => setModal({ teamId: row.team.id, hole: holeNumber })}
                       mulligansEnabled={mulligansEnabled}
                     />
                   ))}
@@ -261,29 +249,30 @@ function TournamentPage() {
         )}
       </main>
 
-      {modal && (() => {
-        const team = (teamsQ.data ?? []).find((t) => t.id === modal.teamId);
-        const teamScores = (scoresQ.data ?? []).filter((s) => s.team_id === modal.teamId);
-        const score = teamScores.find((s) => s.hole_number === modal.hole) ?? null;
-        const hole = (holesQ.data ?? []).find((h) => h.hole_number === modal.hole);
-        const holesList = holesQ.data ?? [];
-        const idx = holesList.findIndex((h) => h.hole_number === modal.hole);
-        const prev = idx > 0 ? holesList[idx - 1] : null;
-        const next = idx >= 0 && idx < holesList.length - 1 ? holesList[idx + 1] : null;
-        return (
-          <HoleDetailModal
-            teamName={team?.name ?? ""}
-            hole={hole ?? null}
-            score={score}
-            teeShotName={score?.tee_shot_player_id ? playerById.get(score.tee_shot_player_id)?.name ?? null : null}
-            mulliganName={score?.mulligan_player_id ? playerById.get(score.mulligan_player_id)?.name ?? null : null}
-            mulligansEnabled={mulligansEnabled}
-            onClose={() => setModal(null)}
-            onPrev={prev ? () => setModal({ teamId: modal.teamId, hole: prev.hole_number }) : null}
-            onNext={next ? () => setModal({ teamId: modal.teamId, hole: next.hole_number }) : null}
-          />
-        );
-      })()}
+      {modal &&
+        (() => {
+          const team = (teamsQ.data ?? []).find((t) => t.id === modal.teamId);
+          const teamScores = (scoresQ.data ?? []).filter((s) => s.team_id === modal.teamId);
+          const score = teamScores.find((s) => s.hole_number === modal.hole) ?? null;
+          const hole = (holesQ.data ?? []).find((h) => h.hole_number === modal.hole);
+          const holesList = holesQ.data ?? [];
+          const idx = holesList.findIndex((h) => h.hole_number === modal.hole);
+          const prev = idx > 0 ? holesList[idx - 1] : null;
+          const next = idx >= 0 && idx < holesList.length - 1 ? holesList[idx + 1] : null;
+          return (
+            <HoleDetailModal
+              teamName={team?.name ?? ""}
+              hole={hole ?? null}
+              score={score}
+              teeShotName={score?.tee_shot_player_id ? (playerById.get(score.tee_shot_player_id)?.name ?? null) : null}
+              mulliganName={score?.mulligan_player_id ? (playerById.get(score.mulligan_player_id)?.name ?? null) : null}
+              mulligansEnabled={mulligansEnabled}
+              onClose={() => setModal(null)}
+              onPrev={prev ? () => setModal({ teamId: modal.teamId, hole: prev.hole_number }) : null}
+              onNext={next ? () => setModal({ teamId: modal.teamId, hole: next.hole_number }) : null}
+            />
+          );
+        })()}
 
       {captainTeamId && (
         <nav className="fixed inset-x-0 bottom-0 z-30 h-14 border-t border-border bg-card/95 backdrop-blur">
@@ -434,7 +423,8 @@ function ScoreCell({ strokes, par }: { strokes: number; par: number }) {
   if (diff <= -2) wrap = "inline-flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary";
   else if (diff === -1) wrap = "inline-flex h-6 w-6 items-center justify-center rounded-full border border-primary";
   else if (diff === 1) wrap = "inline-flex h-6 w-6 items-center justify-center border border-muted-foreground/40";
-  else if (diff >= 2) wrap = "inline-flex h-6 w-6 items-center justify-center border-2 border-destructive/60 text-destructive";
+  else if (diff >= 2)
+    wrap = "inline-flex h-6 w-6 items-center justify-center border-2 border-destructive/60 text-destructive";
   return <span className={`${wrap} ${cls}`}>{strokes}</span>;
 }
 
@@ -474,35 +464,25 @@ function HoleDetailModal({
     !score || !hole
       ? ""
       : diff === 0
-      ? "Par"
-      : diff === -1
-      ? "Birdie"
-      : diff <= -2
-      ? "Eagle"
-      : diff === 1
-      ? "Bogey"
-      : diff === 2
-      ? "Double bogey"
-      : `+${diff}`;
+        ? "Par"
+        : diff === -1
+          ? "Birdie"
+          : diff <= -2
+            ? "Eagle"
+            : diff === 1
+              ? "Bogey"
+              : diff === 2
+                ? "Double bogey"
+                : `+${diff}`;
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-foreground/40 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-foreground/40 p-4" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between">
           <div>
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{teamName}</div>
-            <div className="mt-0.5 font-mono text-2xl font-bold text-foreground">
-              Hole {hole?.hole_number ?? "—"}
-            </div>
-            {hole && (
-              <div className="text-xs text-muted-foreground">Par {hole.par}</div>
-            )}
+            <div className="mt-0.5 font-mono text-2xl font-bold text-foreground">Hole {hole?.hole_number ?? "—"}</div>
+            {hole && <div className="text-xs text-muted-foreground">Par {hole.par}</div>}
           </div>
           <button
             type="button"
