@@ -4,6 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronLeft, Users, Trash2 } from "lucide-react";
 import { adminGetTournament } from "@/lib/admin.functions";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/admin/tournaments/$id")({
   component: EditTournament,
@@ -141,6 +147,16 @@ function EditTournament() {
         </label>
 
         <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-foreground">Start date & time</span>
+          <input
+            type="datetime-local"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+
+        <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-foreground">Status</span>
           <select
             value={status}
@@ -151,6 +167,21 @@ function EditTournament() {
             <option value="active">Active</option>
             <option value="completed">Completed</option>
           </select>
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-foreground">Start format</span>
+          <select
+            value={startFormat}
+            onChange={(e) => setStartFormat(e.target.value as "tee_time" | "shotgun")}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="tee_time">Tee time (all start hole 1)</option>
+            <option value="shotgun">Shotgun (teams start on assigned hole)</option>
+          </select>
+          <p className="mt-1 text-xs text-muted-foreground">
+            With shotgun, set each team's starting hole on the Manage teams page.
+          </p>
         </label>
 
         <label className="block">
@@ -167,15 +198,6 @@ function EditTournament() {
             <option value="best_ball">Best Ball (Four Ball)</option>
             <option value="alternate_shot">Alternate Shot</option>
           </select>
-        </label>
-
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-foreground">Override code</span>
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            className="w-40 rounded-md border border-input bg-background px-3 py-2 font-mono text-sm uppercase"
-          />
         </label>
 
         {format === "texas_scramble" && (
@@ -206,45 +228,6 @@ function EditTournament() {
           Allow mulligans
         </label>
 
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-foreground">Start date & time</span>
-          <input
-            type="datetime-local"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </label>
-
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-foreground">Start format</span>
-          <select
-            value={startFormat}
-            onChange={(e) => setStartFormat(e.target.value as "tee_time" | "shotgun")}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="tee_time">Tee time (all start hole 1)</option>
-            <option value="shotgun">Shotgun (teams start on assigned hole)</option>
-          </select>
-          <p className="mt-1 text-xs text-muted-foreground">
-            With shotgun, set each team's starting hole on the Manage teams page.
-          </p>
-        </label>
-
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-foreground">About (override)</span>
-          <textarea
-            value={about}
-            onChange={(e) => setAbout(e.target.value)}
-            rows={4}
-            placeholder="Leave blank to use the app-wide About text."
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-          <p className="mt-1 text-xs text-muted-foreground">
-            Shown in the info modal on this tournament's pages. Overrides the app-wide About.
-          </p>
-        </label>
-
         <div>
           <span className="mb-2 block text-sm font-medium text-foreground">Hole pars</span>
           <div className="grid grid-cols-6 gap-2 sm:grid-cols-9">
@@ -267,6 +250,40 @@ function EditTournament() {
             ))}
           </div>
         </div>
+
+        <Accordion type="single" collapsible className="border-t border-border">
+          <AccordionItem value="advanced" className="border-b-0">
+            <AccordionTrigger className="text-sm font-medium text-foreground">
+              Advanced settings
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-5 pt-2">
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-foreground">Override code</span>
+                  <input
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.toUpperCase())}
+                    className="w-40 rounded-md border border-input bg-background px-3 py-2 font-mono text-sm uppercase"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-foreground">About (override)</span>
+                  <textarea
+                    value={about}
+                    onChange={(e) => setAbout(e.target.value)}
+                    rows={4}
+                    placeholder="Leave blank to use the app-wide About text."
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Shown in the info modal on this tournament's pages. Overrides the app-wide About.
+                  </p>
+                </label>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {message && <p className="text-sm text-muted-foreground">{message}</p>}
 
