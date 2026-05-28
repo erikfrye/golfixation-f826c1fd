@@ -5,6 +5,9 @@ import { ChevronLeft, Minus, Plus, Check, Loader2, ChevronRight, Grid3x3, X } fr
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    from: search.from === "admin" ? ("admin" as const) : undefined,
+  }),
   component: TeamScoring,
 });
 
@@ -34,6 +37,7 @@ type Score = {
 
 function TeamScoring() {
   const { teamId } = Route.useParams();
+  const { from } = Route.useSearch();
   const [currentHole, setCurrentHole] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -177,10 +181,21 @@ function TeamScoring() {
 
   return (
     <main className="mx-auto max-w-3xl px-4 pt-6 pb-40">
-      <Link to="/captain" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-        <ChevronLeft className="h-3.5 w-3.5" />
-        Back to teams
-      </Link>
+      {from === "admin" && team ? (
+        <Link
+          to="/admin/tournaments/$id/teams"
+          params={{ id: team.tournament_id }}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Back to teams
+        </Link>
+      ) : (
+        <Link to="/captain" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Back to teams
+        </Link>
+      )}
 
       {isLoading || !team || !tournament ? (
         <div className="mt-4 h-24 animate-pulse rounded-lg bg-muted" />
