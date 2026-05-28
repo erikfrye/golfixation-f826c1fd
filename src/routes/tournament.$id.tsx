@@ -174,17 +174,6 @@ function TournamentPage() {
             <span className="text-sm font-semibold text-foreground">Golfixation</span>
           </Link>
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => {
-                scoresQ.refetch();
-                setLastUpdated(new Date());
-              }}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label="Refresh"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Refresh
-            </button>
             <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
           </div>
         </div>
