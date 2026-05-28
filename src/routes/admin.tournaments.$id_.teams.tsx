@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, Plus, Trash2, UserPlus } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, UserPlus, Pencil } from "lucide-react";
 import { adminListTeams, adminGetTournament } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/tournaments/$id_/teams")({
@@ -190,12 +190,22 @@ function ManageTeams() {
                       </label>
                     )}
                   </div>
-                  <button
-                    onClick={() => removeTeam(team.id)}
-                    className="inline-flex items-center gap-1 text-xs text-destructive hover:underline"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> Delete team
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      to="/captain/team/$teamId"
+                      params={{ teamId: team.id }}
+                      search={{ from: "admin" }}
+                      className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-accent"
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Score
+                    </Link>
+                    <button
+                      onClick={() => removeTeam(team.id)}
+                      className="inline-flex items-center gap-1 text-xs text-destructive hover:underline"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Delete team
+                    </button>
+                  </div>
                 </div>
 
                 <ul className="space-y-1.5">
