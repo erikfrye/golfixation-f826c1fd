@@ -150,6 +150,16 @@ function EditTournament() {
         </label>
 
         <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-foreground">Location (golf course)</span>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="e.g. Pebble Beach Golf Links"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+
+        <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-foreground">Start date & time</span>
           <input
             type="datetime-local"
