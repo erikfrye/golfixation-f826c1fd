@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, ChevronLeft, RefreshCw, ChevronDown, ChevronRight, X, Pencil, Trophy } from "lucide-react";
 import { AboutButton } from "@/components/about-dialog";
+import { useExitAnimation } from "@/hooks/use-exit-animation";
 
 export const Route = createFileRoute("/tournament/$id")({
   head: ({ params }) => ({
@@ -463,15 +464,18 @@ function HoleDetailModal({
   onPrev: (() => void) | null;
   onNext: (() => void) | null;
 }) {
+  const { mounted, leaving, close } = useExitAnimation(true, onClose, 180);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") close();
       else if (e.key === "ArrowLeft" && onPrev) onPrev();
       else if (e.key === "ArrowRight" && onNext) onNext();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, onPrev, onNext]);
+  }, [close, onPrev, onNext]);
+
+  if (!mounted) return null;
 
   const diff = score && hole ? score.strokes - hole.par : 0;
   const diffLabel =
@@ -490,8 +494,18 @@ function HoleDetailModal({
                 : `+${diff}`;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-foreground/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
+    <div
+      className={`fixed inset-0 z-40 flex items-center justify-center bg-foreground/40 p-4 ${
+        leaving ? "animate-backdrop-out" : "animate-backdrop-in"
+      }`}
+      onClick={() => close()}
+    >
+      <div
+        className={`w-full max-w-sm rounded-2xl bg-card p-5 shadow-lg ${
+          leaving ? "animate-modal-out" : "animate-modal-in"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-start justify-between">
           <div>
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{teamName}</div>
@@ -500,7 +514,7 @@ function HoleDetailModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => close()}
             className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
             aria-label="Close"
           >
