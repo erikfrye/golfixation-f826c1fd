@@ -38,7 +38,7 @@ export const adminGetTournament = createServerFn({ method: "POST" })
     const admin = await assertAdmin(context.userId);
     const { data: row, error } = await admin
       .from("tournaments")
-      .select("id, name, status, num_holes, format, override_code, tee_shot_minimum, about_content, mulligans_enabled, start_date, start_format")
+      .select("id, name, status, num_holes, format, override_code, tee_shot_minimum, about_content, mulligans_enabled, start_date, start_format, location")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
