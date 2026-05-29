@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, Minus, Plus, Check, Loader2, ChevronRight, Grid3x3, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useExitAnimation } from "@/hooks/use-exit-animation";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -346,24 +347,33 @@ function HolePicker({
   onSelect: (n: number) => void;
   onClose: () => void;
 }) {
+  const { mounted, leaving, close } = useExitAnimation(true, onClose, 220);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [close]);
+  if (!mounted) return null;
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-foreground/40 pb-14" onClick={onClose}>
+    <div
+      className={`fixed inset-0 z-40 flex items-end justify-center bg-foreground/40 pb-14 ${
+        leaving ? "animate-backdrop-out" : "animate-backdrop-in"
+      }`}
+      onClick={() => close()}
+    >
       <div
-        className="w-full max-w-3xl rounded-t-2xl bg-card p-5 shadow-lg"
+        className={`w-full max-w-3xl rounded-t-2xl bg-card p-5 shadow-lg ${
+          leaving ? "animate-sheet-out" : "animate-sheet-in"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Jump to hole</h3>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => close()}
             className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
             aria-label="Close"
           >
@@ -378,7 +388,9 @@ function HolePicker({
               <button
                 key={h.hole_number}
                 type="button"
-                onClick={() => onSelect(h.hole_number)}
+                onClick={() => {
+                  onSelect(h.hole_number);
+                }}
                 className={`flex h-14 flex-col items-center justify-center rounded-lg border text-base font-semibold ${
                   isCurrent
                     ? "border-primary text-primary"

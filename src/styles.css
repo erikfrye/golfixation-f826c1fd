@@ -143,3 +143,36 @@
     color: var(--color-foreground);
   }
 }
+
+/* ---- Tasteful modal & sheet animations ---- */
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes backdrop-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+@keyframes modal-out {
+  from { opacity: 1; transform: translateY(0)   scale(1); }
+  to   { opacity: 0; transform: translateY(6px) scale(0.97); }
+}
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes sheet-out {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+
+.animate-backdrop-in  { animation: backdrop-in  180ms ease-out both; }
+.animate-backdrop-out { animation: backdrop-out 150ms ease-in  both; }
+.animate-modal-in     { animation: modal-in     220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-modal-out    { animation: modal-out    150ms ease-in both; }
+.animate-sheet-in     { animation: sheet-in     260ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-sheet-out    { animation: sheet-out    200ms ease-in both; }
