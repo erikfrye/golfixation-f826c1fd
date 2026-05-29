@@ -26,6 +26,8 @@ type Tournament = {
   format: string;
   about_content: string | null;
   mulligans_enabled: boolean;
+  location: string | null;
+  start_date: string | null;
 };
 type Team = { id: string; name: string };
 type Hole = { hole_number: number; par: number };
@@ -50,7 +52,7 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status, num_holes, format, about_content, mulligans_enabled")
+        .select("id, name, status, num_holes, format, about_content, mulligans_enabled, location, start_date")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -211,6 +213,18 @@ function TournamentPage() {
                 {tournament.format === "texas_scramble" ? "Texas Scramble" : "Scramble"} · {tournament.num_holes} holes
                 · <span className="capitalize">{tournament.status}</span>
               </p>
+              {(tournament.location || tournament.start_date) && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {tournament.location}
+                  {tournament.location && tournament.start_date ? " · " : ""}
+                  {tournament.start_date
+                    ? new Date(tournament.start_date).toLocaleString(undefined, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })
+                    : ""}
+                </p>
+              )}
               <p className="mt-0.5 text-[11px] text-muted-foreground">
                 Last updated {lastUpdated.toLocaleTimeString()}
               </p>

@@ -40,6 +40,7 @@ function EditTournament() {
   });
 
   const [name, setName] = useState("");
+  const [location, setLocation] = useState("");
   const [status, setStatus] = useState("draft");
   const [format, setFormat] = useState<string>("texas_scramble");
   const [code, setCode] = useState("");
@@ -55,6 +56,7 @@ function EditTournament() {
   useEffect(() => {
     if (tQ.data) {
       setName(tQ.data.name);
+      setLocation(tQ.data.location ?? "");
       setStatus(tQ.data.status);
       setFormat(tQ.data.format);
       setCode(tQ.data.override_code);
@@ -85,6 +87,7 @@ function EditTournament() {
         .from("tournaments")
         .update({
           name,
+          location: location.trim() ? location.trim() : null,
           status,
           format,
           override_code: code.toUpperCase(),
@@ -142,6 +145,16 @@ function EditTournament() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-foreground">Location (golf course)</span>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="e.g. Pebble Beach Golf Links"
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           />
         </label>
