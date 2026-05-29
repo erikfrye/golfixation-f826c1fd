@@ -389,9 +389,7 @@ function HolePicker({
                 key={h.hole_number}
                 type="button"
                 onClick={() => {
-                  const n = h.hole_number;
-                  close();
-                  setTimeout(() => onSelect(n), 0);
+                  onSelect(h.hole_number);
                 }}
                 className={`flex h-14 flex-col items-center justify-center rounded-lg border text-base font-semibold ${
                   isCurrent
