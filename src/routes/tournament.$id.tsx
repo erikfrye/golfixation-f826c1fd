@@ -213,6 +213,18 @@ function TournamentPage() {
                 {tournament.format === "texas_scramble" ? "Texas Scramble" : "Scramble"} · {tournament.num_holes} holes
                 · <span className="capitalize">{tournament.status}</span>
               </p>
+              {(tournament.location || tournament.start_date) && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {tournament.location}
+                  {tournament.location && tournament.start_date ? " · " : ""}
+                  {tournament.start_date
+                    ? new Date(tournament.start_date).toLocaleString(undefined, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })
+                    : ""}
+                </p>
+              )}
               <p className="mt-0.5 text-[11px] text-muted-foreground">
                 Last updated {lastUpdated.toLocaleTimeString()}
               </p>
