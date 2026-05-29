@@ -26,6 +26,8 @@ type Tournament = {
   format: string;
   about_content: string | null;
   mulligans_enabled: boolean;
+  location: string | null;
+  start_date: string | null;
 };
 type Team = { id: string; name: string };
 type Hole = { hole_number: number; par: number };
@@ -50,7 +52,7 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status, num_holes, format, about_content, mulligans_enabled")
+        .select("id, name, status, num_holes, format, about_content, mulligans_enabled, location, start_date")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
