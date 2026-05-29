@@ -234,6 +234,7 @@ export type Database = {
           created_by: string | null
           format: string
           id: string
+          location: string | null
           mulligans_enabled: boolean
           name: string
           num_holes: number
@@ -249,6 +250,7 @@ export type Database = {
           created_by?: string | null
           format?: string
           id?: string
+          location?: string | null
           mulligans_enabled?: boolean
           name: string
           num_holes?: number
@@ -264,6 +266,7 @@ export type Database = {
           created_by?: string | null
           format?: string
           id?: string
+          location?: string | null
           mulligans_enabled?: boolean
           name?: string
           num_holes?: number
