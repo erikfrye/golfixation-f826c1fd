@@ -40,6 +40,7 @@ function EditTournament() {
   });
 
   const [name, setName] = useState("");
+  const [location, setLocation] = useState("");
   const [status, setStatus] = useState("draft");
   const [format, setFormat] = useState<string>("texas_scramble");
   const [code, setCode] = useState("");
@@ -55,6 +56,7 @@ function EditTournament() {
   useEffect(() => {
     if (tQ.data) {
       setName(tQ.data.name);
+      setLocation(tQ.data.location ?? "");
       setStatus(tQ.data.status);
       setFormat(tQ.data.format);
       setCode(tQ.data.override_code);
@@ -85,6 +87,7 @@ function EditTournament() {
         .from("tournaments")
         .update({
           name,
+          location: location.trim() ? location.trim() : null,
           status,
           format,
           override_code: code.toUpperCase(),
