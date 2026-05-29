@@ -3,6 +3,7 @@ import { Info, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useExitAnimation } from "@/hooks/use-exit-animation";
 
 type AboutButtonProps = {
   tournamentAbout?: string | null;
@@ -12,6 +13,7 @@ type AboutButtonProps = {
 
 export function AboutButton({ tournamentAbout, tournamentName, className }: AboutButtonProps) {
   const [open, setOpen] = useState(false);
+  const { mounted, leaving, close } = useExitAnimation(open, () => setOpen(false), 180);
 
   const { data: appAbout } = useQuery({
     queryKey: ["app_settings", "about"],
@@ -32,13 +34,13 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
   const title = override ? tournamentName || "About this tournament" : "About Golfixation";
 
   useEffect(() => {
-    if (!open) return;
+    if (!mounted) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [open]);
+  }, [mounted, close]);
 
   return (
     <>
@@ -53,13 +55,17 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
       >
         <Info className="h-5 w-5" />
       </button>
-      {open && typeof document !== "undefined" && createPortal(
+      {mounted && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-foreground/40 p-4"
-          onClick={() => setOpen(false)}
+          className={`fixed inset-0 z-40 flex items-center justify-center bg-foreground/40 p-4 ${
+            leaving ? "animate-backdrop-out" : "animate-backdrop-in"
+          }`}
+          onClick={() => close()}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-lg"
+            className={`w-full max-w-sm rounded-2xl bg-card p-5 shadow-lg ${
+              leaving ? "animate-modal-out" : "animate-modal-in"
+            }`}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -68,7 +74,7 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
               <div className="font-mono text-2xl font-bold text-foreground">{title}</div>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => close()}
                 className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
                 aria-label="Close"
               >
