@@ -15,11 +15,27 @@ function Index() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status, num_holes, format, created_at")
+        .select("id, name, status, num_holes, format, created_at, start_date")
         .in("status", ["active", "completed"])
-        .order("created_at", { ascending: false });
+        .order("start_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
-      return data;
+      const now = Date.now();
+      const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
+      const statusRank: Record<string, number> = { active: 0, upcoming: 1, completed: 2 };
+      const filtered = (data ?? []).filter((t) => {
+        if (t.status !== "completed") return true;
+        if (!t.start_date) return true;
+        return now - new Date(t.start_date).getTime() <= twoWeeksMs;
+      });
+      filtered.sort((a, b) => {
+        const rankDiff = (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99);
+        if (rankDiff !== 0) return rankDiff;
+        const aTime = a.start_date ? new Date(a.start_date).getTime() : Infinity;
+        const bTime = b.start_date ? new Date(b.start_date).getTime() : Infinity;
+        if (a.status === "completed") return bTime - aTime;
+        return Math.abs(aTime - now) - Math.abs(bTime - now);
+      });
+      return filtered;
     },
   });
 
