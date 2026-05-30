@@ -308,7 +308,7 @@ function TournamentPage() {
                       onToggle={() => setExpandedTeam(expandedTeam === row.team.id ? null : row.team.id)}
                       onCellClick={(holeNumber) => setModal({ teamId: row.team.id, hole: holeNumber })}
                       mulligansEnabled={mulligansEnabled}
-                      rankChange={rankChanges.get(row.team.id)}
+                      rankChange={scoreChanges.has(row.team.id) ? (rankChanges.get(row.team.id) ?? "same") : undefined}
                       changedHoles={scoreChanges.get(row.team.id)}
                     />
                   ))}
@@ -387,12 +387,18 @@ function ScoreRow({
   onToggle: () => void;
   onCellClick: (holeNumber: number) => void;
   mulligansEnabled: boolean;
-  rankChange?: "up" | "down";
+  rankChange?: "up" | "down" | "same";
   changedHoles?: Set<number>;
 }) {
   const scoreByHole = new Map(scores.map((s) => [s.hole_number, s]));
   const rowFlash =
-    rankChange === "up" ? "animate-row-flash-up" : rankChange === "down" ? "animate-row-flash-down" : "";
+    rankChange === "up"
+      ? "animate-row-flash-up"
+      : rankChange === "down"
+        ? "animate-row-flash-down"
+        : rankChange === "same"
+          ? "animate-row-flash-same"
+          : "";
   return (
     <li className={rowFlash}>
       <button
