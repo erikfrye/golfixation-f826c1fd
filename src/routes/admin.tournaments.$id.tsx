@@ -10,6 +10,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/admin/tournaments/$id")({
   component: EditTournament,
@@ -231,13 +232,8 @@ function EditTournament() {
           </label>
         )}
 
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <input
-            type="checkbox"
-            checked={mulligansEnabled}
-            onChange={(e) => setMulligansEnabled(e.target.checked)}
-            className="h-4 w-4 rounded border-input"
-          />
+        <label className="flex items-center gap-3 text-sm font-medium text-foreground">
+          <Switch checked={mulligansEnabled} onCheckedChange={setMulligansEnabled} />
           Allow mulligans
         </label>
 
