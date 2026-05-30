@@ -122,13 +122,8 @@ function NewTournament() {
             <option value="shotgun">Shotgun (teams start on assigned hole)</option>
           </select>
         </Field>
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <input
-            type="checkbox"
-            checked={mulligansEnabled}
-            onChange={(e) => setMulligansEnabled(e.target.checked)}
-            className="h-4 w-4 rounded border-input"
-          />
+        <label className="flex items-center gap-3 text-sm font-medium text-foreground">
+          <Switch checked={mulligansEnabled} onCheckedChange={setMulligansEnabled} />
           Allow mulligans
         </label>
         <Field label="Captain override code">
