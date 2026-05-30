@@ -376,6 +376,8 @@ function ScoreRow({
   onToggle,
   onCellClick,
   mulligansEnabled,
+  rankChange,
+  changedHoles,
 }: {
   row: { team: Team; holesPlayed: number; totalStrokes: number; net: number; rank: number; isTied: boolean };
   totalHoles: number;
@@ -385,10 +387,14 @@ function ScoreRow({
   onToggle: () => void;
   onCellClick: (holeNumber: number) => void;
   mulligansEnabled: boolean;
+  rankChange?: "up" | "down";
+  changedHoles?: Set<number>;
 }) {
   const scoreByHole = new Map(scores.map((s) => [s.hole_number, s]));
+  const rowFlash =
+    rankChange === "up" ? "animate-row-flash-up" : rankChange === "down" ? "animate-row-flash-down" : "";
   return (
-    <li>
+    <li className={rowFlash}>
       <button
         type="button"
         onClick={onToggle}
@@ -442,7 +448,10 @@ function ScoreRow({
                   {holes.map((h) => {
                     const s = scoreByHole.get(h.hole_number);
                     return (
-                      <td key={h.hole_number} className="px-2 py-1 text-center font-mono">
+                      <td
+                        key={h.hole_number}
+                        className={`px-2 py-1 text-center font-mono ${changedHoles?.has(h.hole_number) ? "animate-cell-flash" : ""}`}
+                      >
                         {s == null ? (
                           <span className="text-muted-foreground">—</span>
                         ) : (
