@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, ChevronLeft, RefreshCw, ChevronDown, ChevronRight, X, Pencil, Trophy } from "lucide-react";
@@ -47,6 +47,11 @@ function TournamentPage() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [modal, setModal] = useState<{ teamId: string; hole: number } | null>(null);
+  const [rankChanges, setRankChanges] = useState<Map<string, "up" | "down">>(new Map());
+  const [scoreChanges, setScoreChanges] = useState<Map<string, Set<number>>>(new Map());
+  const prevRanksRef = useRef<Map<string, number> | null>(null);
+  const prevScoresRef = useRef<Map<string, number> | null>(null);
+  const seededRef = useRef(false);
 
   const tournamentQ = useQuery({
     queryKey: ["tournament", id],
@@ -163,6 +168,54 @@ function TournamentPage() {
     return ranked.map((r) => ({ ...r, isTied: (counts.get(r.rank) ?? 0) > 1 }));
   }, [holesQ.data, teamsQ.data, scoresQ.data]);
 
+  // Detect rank changes
+  useEffect(() => {
+    if (leaderboard.length === 0) return;
+    const next = new Map(leaderboard.map((r) => [r.team.id, r.rank]));
+    const prev = prevRanksRef.current;
+    if (prev && seededRef.current) {
+      const changed = new Map<string, "up" | "down">();
+      next.forEach((rank, teamId) => {
+        const old = prev.get(teamId);
+        if (old != null && old !== rank) changed.set(teamId, rank < old ? "up" : "down");
+      });
+      if (changed.size > 0) {
+        setRankChanges(changed);
+        const t = setTimeout(() => setRankChanges(new Map()), 1500);
+        prevRanksRef.current = next;
+        return () => clearTimeout(t);
+      }
+    }
+    prevRanksRef.current = next;
+  }, [leaderboard]);
+
+  // Detect score changes (per team+hole)
+  useEffect(() => {
+    if (!scoresQ.data) return;
+    const next = new Map<string, number>();
+    scoresQ.data.forEach((s) => next.set(`${s.team_id}:${s.hole_number}`, s.strokes));
+    const prev = prevScoresRef.current;
+    if (prev && seededRef.current) {
+      const changed = new Map<string, Set<number>>();
+      next.forEach((strokes, key) => {
+        if (prev.get(key) !== strokes) {
+          const [teamId, holeStr] = key.split(":");
+          if (!changed.has(teamId)) changed.set(teamId, new Set());
+          changed.get(teamId)!.add(Number(holeStr));
+        }
+      });
+      if (changed.size > 0) {
+        setScoreChanges(changed);
+        const t = setTimeout(() => setScoreChanges(new Map()), 1300);
+        prevScoresRef.current = next;
+        return () => clearTimeout(t);
+      }
+    }
+    prevScoresRef.current = next;
+    // Seed once both queries have produced data
+    if (!seededRef.current && holesQ.data && teamsQ.data) seededRef.current = true;
+  }, [scoresQ.data, holesQ.data, teamsQ.data]);
+
   const isLoading = tournamentQ.isLoading || holesQ.isLoading || teamsQ.isLoading || scoresQ.isLoading;
   const tournament = tournamentQ.data;
   const totalHoles = tournament?.num_holes ?? 18;
@@ -255,6 +308,8 @@ function TournamentPage() {
                       onToggle={() => setExpandedTeam(expandedTeam === row.team.id ? null : row.team.id)}
                       onCellClick={(holeNumber) => setModal({ teamId: row.team.id, hole: holeNumber })}
                       mulligansEnabled={mulligansEnabled}
+                      rankChange={rankChanges.get(row.team.id)}
+                      changedHoles={scoreChanges.get(row.team.id)}
                     />
                   ))}
                 </ul>
@@ -321,6 +376,8 @@ function ScoreRow({
   onToggle,
   onCellClick,
   mulligansEnabled,
+  rankChange,
+  changedHoles,
 }: {
   row: { team: Team; holesPlayed: number; totalStrokes: number; net: number; rank: number; isTied: boolean };
   totalHoles: number;
@@ -330,10 +387,14 @@ function ScoreRow({
   onToggle: () => void;
   onCellClick: (holeNumber: number) => void;
   mulligansEnabled: boolean;
+  rankChange?: "up" | "down";
+  changedHoles?: Set<number>;
 }) {
   const scoreByHole = new Map(scores.map((s) => [s.hole_number, s]));
+  const rowFlash =
+    rankChange === "up" ? "animate-row-flash-up" : rankChange === "down" ? "animate-row-flash-down" : "";
   return (
-    <li>
+    <li className={rowFlash}>
       <button
         type="button"
         onClick={onToggle}
@@ -387,7 +448,10 @@ function ScoreRow({
                   {holes.map((h) => {
                     const s = scoreByHole.get(h.hole_number);
                     return (
-                      <td key={h.hole_number} className="px-2 py-1 text-center font-mono">
+                      <td
+                        key={h.hole_number}
+                        className={`px-2 py-1 text-center font-mono ${changedHoles?.has(h.hole_number) ? "animate-cell-flash" : ""}`}
+                      >
                         {s == null ? (
                           <span className="text-muted-foreground">—</span>
                         ) : (

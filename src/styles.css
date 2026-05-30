@@ -176,3 +176,20 @@
 .animate-modal-out    { animation: modal-out    150ms ease-in both; }
 .animate-sheet-in     { animation: sheet-in     260ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .animate-sheet-out    { animation: sheet-out    200ms ease-in both; }
+
+/* ---- Live leaderboard change highlights ---- */
+@keyframes row-flash-up {
+  0%   { background-color: color-mix(in oklab, var(--primary) 22%, transparent); }
+  100% { background-color: transparent; }
+}
+@keyframes row-flash-down {
+  0%   { background-color: color-mix(in oklab, var(--accent) 28%, transparent); }
+  100% { background-color: transparent; }
+}
+@keyframes cell-flash {
+  0%   { background-color: color-mix(in oklab, var(--primary) 30%, transparent); box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 55%, transparent) inset; }
+  100% { background-color: transparent; box-shadow: 0 0 0 0 transparent inset; }
+}
+.animate-row-flash-up   { animation: row-flash-up   1400ms ease-out both; }
+.animate-row-flash-down { animation: row-flash-down 1400ms ease-out both; }
+.animate-cell-flash     { animation: cell-flash     1200ms ease-out both; border-radius: 0.375rem; }
