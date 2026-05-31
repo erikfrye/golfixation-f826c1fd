@@ -74,3 +74,34 @@ export const listMyCaptainTeams = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+/* Admin: fetch score audit log for a tournament */
+export const adminGetScoreAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ tournamentId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const admin = await assertAdmin(context.userId);
+    const [auditRes, teamsRes, playersRes] = await Promise.all([
+      admin
+        .from("hole_score_audit")
+        .select(
+          "id, team_id, hole_number, action, old_strokes, new_strokes, old_tee_shot_player_id, new_tee_shot_player_id, old_mulligan_player_id, new_mulligan_player_id, changed_by, changed_by_email, changed_at",
+        )
+        .eq("tournament_id", data.tournamentId)
+        .order("changed_at", { ascending: false })
+        .limit(2000),
+      admin.from("teams").select("id, name").eq("tournament_id", data.tournamentId),
+      admin
+        .from("team_players")
+        .select("id, name")
+        .eq("tournament_id", data.tournamentId),
+    ]);
+    if (auditRes.error) throw new Error(auditRes.error.message);
+    if (teamsRes.error) throw new Error(teamsRes.error.message);
+    if (playersRes.error) throw new Error(playersRes.error.message);
+    return {
+      entries: auditRes.data ?? [],
+      teams: teamsRes.data ?? [],
+      players: playersRes.data ?? [],
+    };
+  });
