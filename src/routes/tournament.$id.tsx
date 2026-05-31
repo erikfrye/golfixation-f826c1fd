@@ -38,6 +38,8 @@ type Score = {
   strokes: number;
   tee_shot_player_id: string | null;
   mulligan_player_id: string | null;
+  first_saved_at: string;
+  updated_at: string;
 };
 type Player = { id: string; name: string; team_id: string };
 
