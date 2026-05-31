@@ -45,7 +45,8 @@ function ManageTeams() {
       const { data, error } = await supabase
         .from("team_players")
         .select("id, team_id, name, mulligans_total")
-        .eq("tournament_id", id);
+        .eq("tournament_id", id)
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Player[];
     },
