@@ -21,6 +21,7 @@ import { Route as AdminTournamentsNewRouteImport } from './routes/admin.tourname
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as CaptainTeamTeamIdIndexRouteImport } from './routes/captain.team.$teamId.index'
 import { Route as AdminTournamentsIdTeamsRouteImport } from './routes/admin.tournaments.$id_.teams'
+import { Route as AdminTournamentsIdAuditRouteImport } from './routes/admin.tournaments.$id_.audit'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -82,6 +83,11 @@ const AdminTournamentsIdTeamsRoute = AdminTournamentsIdTeamsRouteImport.update({
   path: '/tournaments/$id/teams',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTournamentsIdAuditRoute = AdminTournamentsIdAuditRouteImport.update({
+  id: '/tournaments/$id_/audit',
+  path: '/tournaments/$id/audit',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/admin/tournaments/new': typeof AdminTournamentsNewRoute
   '/captain/team/$teamId': typeof CaptainTeamTeamIdRouteWithChildren
+  '/admin/tournaments/$id/audit': typeof AdminTournamentsIdAuditRoute
   '/admin/tournaments/$id/teams': typeof AdminTournamentsIdTeamsRoute
   '/captain/team/$teamId/': typeof CaptainTeamTeamIdIndexRoute
 }
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/captain': typeof CaptainIndexRoute
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/admin/tournaments/new': typeof AdminTournamentsNewRoute
+  '/admin/tournaments/$id/audit': typeof AdminTournamentsIdAuditRoute
   '/admin/tournaments/$id/teams': typeof AdminTournamentsIdTeamsRoute
   '/captain/team/$teamId': typeof CaptainTeamTeamIdIndexRoute
 }
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/admin/tournaments/$id': typeof AdminTournamentsIdRoute
   '/admin/tournaments/new': typeof AdminTournamentsNewRoute
   '/captain/team/$teamId': typeof CaptainTeamTeamIdRouteWithChildren
+  '/admin/tournaments/$id_/audit': typeof AdminTournamentsIdAuditRoute
   '/admin/tournaments/$id_/teams': typeof AdminTournamentsIdTeamsRoute
   '/captain/team/$teamId/': typeof CaptainTeamTeamIdIndexRoute
 }
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments/$id'
     | '/admin/tournaments/new'
     | '/captain/team/$teamId'
+    | '/admin/tournaments/$id/audit'
     | '/admin/tournaments/$id/teams'
     | '/captain/team/$teamId/'
   fileRoutesByTo: FileRoutesByTo
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/captain'
     | '/admin/tournaments/$id'
     | '/admin/tournaments/new'
+    | '/admin/tournaments/$id/audit'
     | '/admin/tournaments/$id/teams'
     | '/captain/team/$teamId'
   id:
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/admin/tournaments/$id'
     | '/admin/tournaments/new'
     | '/captain/team/$teamId'
+    | '/admin/tournaments/$id_/audit'
     | '/admin/tournaments/$id_/teams'
     | '/captain/team/$teamId/'
   fileRoutesById: FileRoutesById
@@ -259,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTournamentsIdTeamsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/tournaments/$id_/audit': {
+      id: '/admin/tournaments/$id_/audit'
+      path: '/tournaments/$id/audit'
+      fullPath: '/admin/tournaments/$id/audit'
+      preLoaderRoute: typeof AdminTournamentsIdAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -266,6 +285,7 @@ interface AdminRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AdminTournamentsIdRoute: typeof AdminTournamentsIdRoute
   AdminTournamentsNewRoute: typeof AdminTournamentsNewRoute
+  AdminTournamentsIdAuditRoute: typeof AdminTournamentsIdAuditRoute
   AdminTournamentsIdTeamsRoute: typeof AdminTournamentsIdTeamsRoute
 }
 
@@ -273,6 +293,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AdminTournamentsIdRoute: AdminTournamentsIdRoute,
   AdminTournamentsNewRoute: AdminTournamentsNewRoute,
+  AdminTournamentsIdAuditRoute: AdminTournamentsIdAuditRoute,
   AdminTournamentsIdTeamsRoute: AdminTournamentsIdTeamsRoute,
 }
 
@@ -312,3 +333,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
