@@ -524,6 +524,13 @@ function ScoreCell({ strokes, par }: { strokes: number; par: number }) {
   return <span className={`${wrap} ${cls}`}>{strokes}</span>;
 }
 
+const LATE_EDIT_THRESHOLD_MS = 15 * 60 * 1000;
+function wasLateEdited(s: { first_saved_at: string; updated_at: string }): boolean {
+  const first = new Date(s.first_saved_at).getTime();
+  const last = new Date(s.updated_at).getTime();
+  return Number.isFinite(first) && Number.isFinite(last) && last - first > LATE_EDIT_THRESHOLD_MS;
+}
+
 function HoleDetailModal({
   teamName,
   hole,
