@@ -476,6 +476,13 @@ function ScoreRow({
                                 aria-label="Mulligan used"
                               />
                             )}
+                            {wasLateEdited(s) && (
+                              <span
+                                className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-sky-500 ring-1 ring-background"
+                                aria-label="Edited after submission"
+                                title="Edited after submission"
+                              />
+                            )}
                           </button>
                         )}
                       </td>
@@ -496,6 +503,8 @@ function ScoreRow({
                 <span className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-amber-500" /> mulligan
               </>
             )}
+            {" · "}
+            <span className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-sky-500" /> edited
           </p>
         </div>
       )}
