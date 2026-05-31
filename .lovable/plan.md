@@ -1,43 +1,22 @@
-## Goal
-When the live leaderboard updates (via the existing realtime subscription), give viewers a brief visual cue for what changed:
-- A row flashes when its **position** changes (moved up or down).
-- An expanded score cell flashes when its **strokes** change (new score, edited score).
+## Problem
 
-## What changes
+In `src/routes/captain/team/$teamId/index.tsx`, when the captain opens the scoring page (or returns to it after backgrounding the browser), the active hole resets to the team's `start_hole`. That's correct on a fresh round, but as the team progresses it should resume at the first uncompleted hole instead of jumping back to the start.
 
-### 1. Track previous values
-In `TournamentPage`, alongside `leaderboard`, keep a ref of the previous rank-per-team and previous strokes-per-(team, hole). On each recompute, diff against the previous snapshot to produce two ephemeral sets:
-- `changedRanks: Map<teamId, "up" | "down">`
-- `changedScores: Set<"teamId:holeNumber">`
+## Fix
 
-These get cleared after the highlight animation finishes (~1.5s) via `setTimeout`. The very first computation (initial load) seeds the snapshot but produces no highlights — we only flash on actual deltas.
+Update the initial-hole logic in `TeamScoring` so that when `currentHole` is `null` and data has loaded, we pick the resume hole based on scoring progress:
 
-### 2. Pass highlights into rows
-`ScoreRow` gets two new optional props:
-- `rankChange?: "up" | "down"` — drives a row-level flash.
-- `changedHoles?: Set<number>` — drives per-cell flashes inside the expanded table.
+1. Start from `team.start_hole`.
+2. Walk forward around the course (wrapping at `tournament.num_holes`) and return the first hole that does not yet have an entry in `scoreByHole`.
+3. If every hole has a score (round complete), fall back to `team.start_hole` so the captain lands on a sensible place to review.
+4. If no scores exist yet, behavior is unchanged — lands on `start_hole`.
 
-### 3. Animation styles (theme-aligned)
-Add two short keyframes to `src/styles.css` (matching the existing modal/sheet animation block):
-- `row-flash-up` — background fades from `color-mix(in oklab, var(--primary) 18%, transparent)` to transparent over ~1.4s.
-- `row-flash-down` — same, using `--accent` (warm sand) so a drop reads differently from a climb without leaning on red.
-- `cell-flash` — score cell briefly pulses with a soft `--primary` ring + background tint, then fades, ~1.2s.
+Implementation notes:
+- Replace the current `useEffect` that sets `currentHole` from `team.start_hole` with one that also waits for `tournamentQ.data` and `scoresQ.data` to be loaded, then computes the resume hole using the wrap helper already used for next/prev navigation.
+- Only auto-set when `currentHole === null`. Once the captain manually navigates (Next, Previous, hole picker), we keep their choice for the session — same as today.
+- No schema changes, no server-function changes. Pure client logic in this one file.
 
-All three use `ease-out` and `forwards` so they settle cleanly. Colors come from existing semantic tokens — no new palette entries.
+## Out of scope
 
-### 4. Behavior notes
-- Highlight only triggers from realtime/refetch deltas, not from expand/collapse or initial render.
-- If a row both changes rank and has a changed cell while expanded, both animations play independently.
-- Ties (`T3`) are compared on the numeric rank only; gaining/losing the `T` prefix without a rank number change does not flash.
-- New teams appearing or teams with their first score sort in without a flash (no prior rank to compare).
-
-## Open questions
-1. **Color for rank-down**: use accent (sand/amber) as proposed, or keep it neutral (muted) so it reads as "just changed" without implying negative? Up = primary green either way.
-2. **Cell flash scope**: only flash cells visible in the currently expanded row, or queue the flash and play it when the user expands that row within a short window? Simpler is "only if expanded right now".
-3. **Duration**: 1.4s for rows / 1.2s for cells feels tasteful given the existing 200ms modal timings. OK, or do you want it snappier (~700ms) or longer (~2s)?
-
-## Files touched
-- `src/routes/tournament.$id.tsx` — diff tracking, prop wiring, conditional classes on the row `<button>` and on each `<td>` score cell.
-- `src/styles.css` — three new keyframes + utility classes (`animate-row-flash-up`, `animate-row-flash-down`, `animate-cell-flash`).
-
-No DB, RLS, or server-function changes.
+- Persisting the last-viewed hole across reloads (we always derive from actual saved scores, which is more reliable than localStorage).
+- Any other captain-flow changes.

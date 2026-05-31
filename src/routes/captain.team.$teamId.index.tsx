@@ -144,8 +144,24 @@ function TeamScoring() {
   const mulligansEnabled = tournament?.mulligans_enabled ?? true;
 
   useEffect(() => {
-    if (currentHole === null && team) setCurrentHole(team.start_hole || 1);
-  }, [team, currentHole]);
+    if (currentHole !== null) return;
+    if (!team || !tournament) return;
+    const start = team.start_hole || 1;
+    const total = tournament.num_holes;
+    if (!total) {
+      setCurrentHole(start);
+      return;
+    }
+    const playedSet = new Set(scores.map((s) => s.hole_number));
+    for (let i = 0; i < total; i++) {
+      const h = ((start - 1 + i) % total) + 1;
+      if (!playedSet.has(h)) {
+        setCurrentHole(h);
+        return;
+      }
+    }
+    setCurrentHole(start);
+  }, [team, tournament, scores, currentHole]);
 
   const teeShotsRequiredRemaining = useMemo(() => {
     if (!tournament || !isTexasScramble) return 0;
