@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, Users, Trash2 } from "lucide-react";
+import { ChevronLeft, Users, Trash2, History } from "lucide-react";
 import { adminGetTournament } from "@/lib/admin.functions";
 import {
   Accordion,
@@ -131,13 +131,22 @@ function EditTournament() {
 
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Edit tournament</h1>
-        <Link
-          to="/admin/tournaments/$id/teams"
-          params={{ id }}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent"
-        >
-          <Users className="h-4 w-4" /> Manage teams
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to="/admin/tournaments/$id_/audit"
+            params={{ id }}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent"
+          >
+            <History className="h-4 w-4" /> Score history
+          </Link>
+          <Link
+            to="/admin/tournaments/$id/teams"
+            params={{ id }}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent"
+          >
+            <Users className="h-4 w-4" /> Manage teams
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-5 rounded-lg border border-border bg-card p-5">

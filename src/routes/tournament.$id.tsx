@@ -38,6 +38,8 @@ type Score = {
   strokes: number;
   tee_shot_player_id: string | null;
   mulligan_player_id: string | null;
+  first_saved_at: string;
+  updated_at: string;
 };
 type Player = { id: string; name: string; team_id: string };
 
@@ -102,7 +104,7 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hole_scores")
-        .select("team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id")
+        .select("team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at, updated_at")
         .eq("tournament_id", id);
       if (error) throw error;
       return (data ?? []) as Score[];
@@ -474,6 +476,13 @@ function ScoreRow({
                                 aria-label="Mulligan used"
                               />
                             )}
+                            {wasLateEdited(s) && (
+                              <span
+                                className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-sky-500 ring-1 ring-background"
+                                aria-label="Edited after submission"
+                                title="Edited after submission"
+                              />
+                            )}
                           </button>
                         )}
                       </td>
@@ -494,6 +503,8 @@ function ScoreRow({
                 <span className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-amber-500" /> mulligan
               </>
             )}
+            {" · "}
+            <span className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-sky-500" /> edited
           </p>
         </div>
       )}
@@ -511,6 +522,13 @@ function ScoreCell({ strokes, par }: { strokes: number; par: number }) {
   else if (diff >= 2)
     wrap = "inline-flex h-6 w-6 items-center justify-center border-2 border-destructive/60 text-destructive";
   return <span className={`${wrap} ${cls}`}>{strokes}</span>;
+}
+
+const LATE_EDIT_THRESHOLD_MS = 15 * 60 * 1000;
+function wasLateEdited(s: { first_saved_at: string; updated_at: string }): boolean {
+  const first = new Date(s.first_saved_at).getTime();
+  const last = new Date(s.updated_at).getTime();
+  return Number.isFinite(first) && Number.isFinite(last) && last - first > LATE_EDIT_THRESHOLD_MS;
 }
 
 function HoleDetailModal({

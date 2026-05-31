@@ -50,8 +50,60 @@ export type Database = {
         }
         Relationships: []
       }
+      hole_score_audit: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          changed_by_email: string | null
+          hole_number: number
+          id: string
+          new_mulligan_player_id: string | null
+          new_strokes: number | null
+          new_tee_shot_player_id: string | null
+          old_mulligan_player_id: string | null
+          old_strokes: number | null
+          old_tee_shot_player_id: string | null
+          team_id: string
+          tournament_id: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_email?: string | null
+          hole_number: number
+          id?: string
+          new_mulligan_player_id?: string | null
+          new_strokes?: number | null
+          new_tee_shot_player_id?: string | null
+          old_mulligan_player_id?: string | null
+          old_strokes?: number | null
+          old_tee_shot_player_id?: string | null
+          team_id: string
+          tournament_id: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_email?: string | null
+          hole_number?: number
+          id?: string
+          new_mulligan_player_id?: string | null
+          new_strokes?: number | null
+          new_tee_shot_player_id?: string | null
+          old_mulligan_player_id?: string | null
+          old_strokes?: number | null
+          old_tee_shot_player_id?: string | null
+          team_id?: string
+          tournament_id?: string
+        }
+        Relationships: []
+      }
       hole_scores: {
         Row: {
+          first_saved_at: string
           hole_number: number
           id: string
           mulligan_player_id: string | null
@@ -62,6 +114,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          first_saved_at?: string
           hole_number: number
           id?: string
           mulligan_player_id?: string | null
@@ -72,6 +125,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          first_saved_at?: string
           hole_number?: number
           id?: string
           mulligan_player_id?: string | null
