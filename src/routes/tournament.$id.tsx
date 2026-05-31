@@ -104,7 +104,7 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hole_scores")
-        .select("team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id")
+        .select("team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at, updated_at")
         .eq("tournament_id", id);
       if (error) throw error;
       return (data ?? []) as Score[];
