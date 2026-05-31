@@ -91,7 +91,7 @@ function ManageTeams() {
       tournament_id: id,
       team_id: teamId,
       name: name.trim(),
-      mulligans_total: mulligansEnabled ? 2 : 0,
+      mulligans_total: 0,
     });
     refresh();
   };
