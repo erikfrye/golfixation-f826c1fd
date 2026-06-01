@@ -40,6 +40,7 @@ type Score = {
   mulligan_player_id: string | null;
   first_saved_at: string;
   updated_at: string;
+  last_edit_reason: string | null;
 };
 type Player = { id: string; name: string; team_id: string };
 
@@ -104,7 +105,7 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hole_scores")
-        .select("team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at, updated_at")
+        .select("team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at, updated_at, last_edit_reason")
         .eq("tournament_id", id);
       if (error) throw error;
       return (data ?? []) as Score[];
@@ -646,6 +647,24 @@ function HoleDetailModal({
                     )
                   }
                 />
+              )}
+              {(wasLateEdited(score) || score.last_edit_reason) && (
+                <div className="rounded-md border border-sky-500/30 bg-sky-500/5 p-3">
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-sky-600 dark:text-sky-400">
+                    <span className="h-2 w-2 rounded-full bg-sky-500" />
+                    Edited after submission
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    First saved {new Date(score.first_saved_at).toLocaleString()} · last edited{" "}
+                    {new Date(score.updated_at).toLocaleString()}
+                  </p>
+                  {score.last_edit_reason && (
+                    <p className="mt-2 text-xs text-foreground">
+                      <span className="text-muted-foreground">Reason: </span>
+                      {score.last_edit_reason}
+                    </p>
+                  )}
+                </div>
               )}
             </>
           ) : (

@@ -4,6 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, Minus, Plus, Check, Loader2, ChevronRight, Grid3x3, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -459,6 +470,8 @@ function HoleCard({
   const [mulliganPlayerId, setMulliganPlayerId] = useState<string>(existing?.mulligan_player_id ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reasonOpen, setReasonOpen] = useState(false);
+  const [reason, setReason] = useState("");
 
   const dirty =
     !existing ||
@@ -474,7 +487,10 @@ function HoleCard({
   const mulliganOverLimit =
     !!mulliganPlayer && mulliganAlreadyUsed + 1 > mulliganPlayer.mulligans_total;
 
-  const save = async () => {
+  const requiresReason =
+    !!existing && strokes < existing.strokes;
+
+  const persist = async (editReason: string | null) => {
     if (isTexasScramble && !teeShotPlayerId) {
       setError("Select tee-shot player");
       return;
@@ -494,6 +510,7 @@ function HoleCard({
       strokes,
       tee_shot_player_id: isTexasScramble ? teeShotPlayerId || null : null,
       mulligan_player_id: mulligansEnabled ? mulliganPlayerId || null : null,
+      last_edit_reason: editReason,
     };
     const { error } = await supabase
       .from("hole_scores")
@@ -504,7 +521,18 @@ function HoleCard({
       return;
     }
     qc.invalidateQueries({ queryKey: ["captain-scores", team.id] });
+    setReason("");
+    setReasonOpen(false);
     onSaved();
+  };
+
+  const save = async () => {
+    if (requiresReason) {
+      setReason("");
+      setReasonOpen(true);
+      return;
+    }
+    await persist(null);
   };
 
   const diff = strokes - hole.par;
@@ -639,6 +667,43 @@ function HoleCard({
           {existing ? (dirty ? "Update & next" : "Saved") : "Save & next"}
         </button>
       </div>
+
+      <AlertDialog open={reasonOpen} onOpenChange={(o) => !saving && setReasonOpen(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Lowering a saved score</AlertDialogTitle>
+            <AlertDialogDescription>
+              You're changing hole {hole.hole_number} from{" "}
+              <span className="font-mono font-semibold text-foreground">{existing?.strokes}</span> to{" "}
+              <span className="font-mono font-semibold text-foreground">{strokes}</span>. Please
+              provide a brief reason for the correction. This will be logged with the change.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value.slice(0, 500))}
+            placeholder="e.g. miscounted strokes on the green"
+            rows={3}
+            autoFocus
+          />
+          <p className="text-[11px] text-muted-foreground">
+            {reason.trim().length}/500 — minimum 5 characters
+          </p>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={saving || reason.trim().length < 5}
+              onClick={(e) => {
+                e.preventDefault();
+                void persist(reason.trim());
+              }}
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Save change
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

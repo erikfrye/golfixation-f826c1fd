@@ -85,7 +85,7 @@ export const adminGetScoreAudit = createServerFn({ method: "POST" })
       admin
         .from("hole_score_audit")
         .select(
-          "id, team_id, hole_number, action, old_strokes, new_strokes, old_tee_shot_player_id, new_tee_shot_player_id, old_mulligan_player_id, new_mulligan_player_id, changed_by, changed_by_email, changed_at",
+          "id, team_id, hole_number, action, old_strokes, new_strokes, old_tee_shot_player_id, new_tee_shot_player_id, old_mulligan_player_id, new_mulligan_player_id, changed_by, changed_by_email, changed_at, edit_reason",
         )
         .eq("tournament_id", data.tournamentId)
         .order("changed_at", { ascending: false })
