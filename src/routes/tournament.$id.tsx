@@ -40,6 +40,7 @@ type Score = {
   mulligan_player_id: string | null;
   first_saved_at: string;
   updated_at: string;
+  last_edit_reason: string | null;
 };
 type Player = { id: string; name: string; team_id: string };
 
@@ -104,7 +105,7 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hole_scores")
-        .select("team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at, updated_at")
+        .select("team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at, updated_at, last_edit_reason")
         .eq("tournament_id", id);
       if (error) throw error;
       return (data ?? []) as Score[];
