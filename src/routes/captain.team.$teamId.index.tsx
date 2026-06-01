@@ -45,6 +45,7 @@ type Score = {
   strokes: number;
   tee_shot_player_id: string | null;
   mulligan_player_id: string | null;
+  first_saved_at: string | null;
 };
 
 function TeamScoring() {
@@ -114,7 +115,7 @@ function TeamScoring() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hole_scores")
-        .select("id, hole_number, strokes, tee_shot_player_id, mulligan_player_id")
+        .select("id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at")
         .eq("team_id", teamId)
         .order("hole_number");
       if (error) throw error;
@@ -487,8 +488,12 @@ function HoleCard({
   const mulliganOverLimit =
     !!mulliganPlayer && mulliganAlreadyUsed + 1 > mulliganPlayer.mulligans_total;
 
+  const LATE_EDIT_THRESHOLD_MS = 15 * 60 * 1000;
+  const isLateEdit =
+    !!existing?.first_saved_at &&
+    Date.now() - new Date(existing.first_saved_at).getTime() > LATE_EDIT_THRESHOLD_MS;
   const requiresReason =
-    !!existing && strokes < existing.strokes;
+    !!existing && strokes < existing.strokes && isLateEdit;
 
   const persist = async (editReason: string | null) => {
     if (isTexasScramble && !teeShotPlayerId) {
