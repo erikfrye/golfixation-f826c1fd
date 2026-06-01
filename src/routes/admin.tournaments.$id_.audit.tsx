@@ -136,6 +136,7 @@ function AuditPage() {
                   first != null &&
                   new Date(e.changed_at).getTime() - first > LATE_EDIT_MS;
                 return (
+                  <>
                   <tr
                     key={e.id}
                     className={`border-t border-border ${isLate ? "bg-amber-500/5" : ""}`}
@@ -187,12 +188,13 @@ function AuditPage() {
                     </td>
                   </tr>
                   {e.edit_reason && (
-                    <tr className={`border-t border-border/50 ${isLate ? "bg-amber-500/5" : ""}`}>
+                    <tr key={`${e.id}-r`} className={`border-t border-border/50 ${isLate ? "bg-amber-500/5" : ""}`}>
                       <td colSpan={8} className="px-3 pb-2 pt-0 text-xs text-muted-foreground">
                         <span className="text-foreground/70">Reason:</span> {e.edit_reason}
                       </td>
                     </tr>
                   )}
+                  </>
                 );
               })}
             </tbody>
