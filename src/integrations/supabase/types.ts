@@ -56,6 +56,7 @@ export type Database = {
           changed_at: string
           changed_by: string | null
           changed_by_email: string | null
+          edit_reason: string | null
           hole_number: number
           id: string
           new_mulligan_player_id: string | null
@@ -72,6 +73,7 @@ export type Database = {
           changed_at?: string
           changed_by?: string | null
           changed_by_email?: string | null
+          edit_reason?: string | null
           hole_number: number
           id?: string
           new_mulligan_player_id?: string | null
@@ -88,6 +90,7 @@ export type Database = {
           changed_at?: string
           changed_by?: string | null
           changed_by_email?: string | null
+          edit_reason?: string | null
           hole_number?: number
           id?: string
           new_mulligan_player_id?: string | null
@@ -106,6 +109,7 @@ export type Database = {
           first_saved_at: string
           hole_number: number
           id: string
+          last_edit_reason: string | null
           mulligan_player_id: string | null
           strokes: number
           team_id: string
@@ -117,6 +121,7 @@ export type Database = {
           first_saved_at?: string
           hole_number: number
           id?: string
+          last_edit_reason?: string | null
           mulligan_player_id?: string | null
           strokes: number
           team_id: string
@@ -128,6 +133,7 @@ export type Database = {
           first_saved_at?: string
           hole_number?: number
           id?: string
+          last_edit_reason?: string | null
           mulligan_player_id?: string | null
           strokes?: number
           team_id?: string
