@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { adminGetScoreAudit, adminGetTournament } from "@/lib/admin.functions";
@@ -136,9 +136,8 @@ function AuditPage() {
                   first != null &&
                   new Date(e.changed_at).getTime() - first > LATE_EDIT_MS;
                 return (
-                  <>
+                  <Fragment key={e.id}>
                   <tr
-                    key={e.id}
                     className={`border-t border-border ${isLate ? "bg-amber-500/5" : ""}`}
                   >
                     <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
@@ -194,7 +193,7 @@ function AuditPage() {
                       </td>
                     </tr>
                   )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
