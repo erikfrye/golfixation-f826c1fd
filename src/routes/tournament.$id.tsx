@@ -250,15 +250,35 @@ function TournamentPage() {
             <Flag className="h-5 w-5 text-primary" />
             <span className="text-sm font-semibold text-foreground">Golfixation</span>
           </Link>
-          <div className="flex items-center gap-1">
-            <Link
-              to="/login"
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              Login
-            </Link>
-            <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
-          </div>
+          {email ? (
+            <div className="flex items-center gap-3">
+              <Link
+                to="/captain"
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                {email}
+              </Link>
+              <button
+                onClick={signOut}
+                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Sign out"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sign out
+              </button>
+              <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <Link
+                to="/login"
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Login
+              </Link>
+              <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
+            </div>
+          )}
         </div>
       </header>
 
