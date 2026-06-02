@@ -10,6 +10,25 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") setEmail(null);
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/" });
+  };
+
   const { data: tournaments, isLoading } = useQuery({
     queryKey: ["tournaments", "public"],
     queryFn: async () => {
