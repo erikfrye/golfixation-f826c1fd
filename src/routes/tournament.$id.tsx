@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Flag, ChevronLeft, RefreshCw, ChevronDown, ChevronRight, X, Pencil, Trophy } from "lucide-react";
+import { Flag, ChevronLeft, ChevronDown, ChevronRight, X, Pencil, Trophy } from "lucide-react";
 import { AboutButton } from "@/components/about-dialog";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
 
@@ -233,17 +233,12 @@ function TournamentPage() {
             <span className="text-sm font-semibold text-foreground">Golfixation</span>
           </Link>
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => {
-                scoresQ.refetch();
-                setLastUpdated(new Date());
-              }}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label="Refresh"
+            <Link
+              to="/login"
+              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Refresh
-            </button>
+              Login
+            </Link>
             <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
           </div>
         </div>
