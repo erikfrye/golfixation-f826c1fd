@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Flag, ChevronLeft, ChevronDown, ChevronRight, X, Pencil, Trophy } from "lucide-react";
+import { Flag, ChevronLeft, ChevronDown, ChevronRight, X, Pencil, Trophy, LogOut } from "lucide-react";
 import { AboutButton } from "@/components/about-dialog";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
 
@@ -45,8 +45,10 @@ type Score = {
 type Player = { id: string; name: string; team_id: string };
 
 function TournamentPage() {
+  const navigate = useNavigate();
   const { id } = Route.useParams();
   const { teamId: captainTeamId } = Route.useSearch();
+  const [email, setEmail] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [modal, setModal] = useState<{ teamId: string; hole: number } | null>(null);
@@ -55,6 +57,22 @@ function TournamentPage() {
   const prevRanksRef = useRef<Map<string, number> | null>(null);
   const prevScoresRef = useRef<Map<string, number> | null>(null);
   const seededRef = useRef(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") setEmail(null);
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/" });
+  };
 
   const tournamentQ = useQuery({
     queryKey: ["tournament", id],
@@ -232,15 +250,35 @@ function TournamentPage() {
             <Flag className="h-5 w-5 text-primary" />
             <span className="text-sm font-semibold text-foreground">Golfixation</span>
           </Link>
-          <div className="flex items-center gap-1">
-            <Link
-              to="/login"
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              Login
-            </Link>
-            <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
-          </div>
+          {email ? (
+            <div className="flex items-center gap-3">
+              <Link
+                to="/captain"
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                {email}
+              </Link>
+              <button
+                onClick={signOut}
+                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Sign out"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sign out
+              </button>
+              <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <Link
+                to="/login"
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Login
+              </Link>
+              <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
+            </div>
+          )}
         </div>
       </header>
 
