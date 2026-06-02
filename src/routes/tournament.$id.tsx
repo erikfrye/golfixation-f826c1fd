@@ -45,8 +45,10 @@ type Score = {
 type Player = { id: string; name: string; team_id: string };
 
 function TournamentPage() {
+  const navigate = useNavigate();
   const { id } = Route.useParams();
   const { teamId: captainTeamId } = Route.useSearch();
+  const [email, setEmail] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [modal, setModal] = useState<{ teamId: string; hole: number } | null>(null);
@@ -55,6 +57,22 @@ function TournamentPage() {
   const prevRanksRef = useRef<Map<string, number> | null>(null);
   const prevScoresRef = useRef<Map<string, number> | null>(null);
   const seededRef = useRef(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") setEmail(null);
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/" });
+  };
 
   const tournamentQ = useQuery({
     queryKey: ["tournament", id],
