@@ -130,7 +130,34 @@ function TeamScoring() {
   const tournament = tournamentQ.data;
   const holes = holesQ.data ?? [];
   const players = playersQ.data ?? [];
-  const scores = scoresQ.data ?? [];
+  const serverScores = scoresQ.data ?? [];
+
+  const { items: queueItems } = useOfflineQueue(teamId);
+
+  const pendingByHole = useMemo(() => {
+    const m = new Map<number, (typeof queueItems)[number]>();
+    queueItems.forEach((i) => m.set(i.holeNumber, i));
+    return m;
+  }, [queueItems]);
+
+  // Overlay queued (unsynced) score writes on top of server-confirmed rows
+  const scores = useMemo<Score[]>(() => {
+    if (queueItems.length === 0) return serverScores;
+    const byHole = new Map<number, Score>();
+    serverScores.forEach((s) => byHole.set(s.hole_number, s));
+    queueItems.forEach((q) => {
+      const existing = byHole.get(q.holeNumber);
+      byHole.set(q.holeNumber, {
+        id: existing?.id ?? `pending-${q.id}`,
+        hole_number: q.holeNumber,
+        strokes: q.payload.strokes,
+        tee_shot_player_id: q.payload.tee_shot_player_id,
+        mulligan_player_id: q.payload.mulligan_player_id,
+        first_saved_at: existing?.first_saved_at ?? new Date(q.queuedAt).toISOString(),
+      });
+    });
+    return Array.from(byHole.values()).sort((a, b) => a.hole_number - b.hole_number);
+  }, [serverScores, queueItems]);
 
   const scoreByHole = useMemo(() => {
     const m = new Map<number, Score>();
