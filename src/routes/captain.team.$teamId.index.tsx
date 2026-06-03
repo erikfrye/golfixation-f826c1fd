@@ -503,6 +503,7 @@ function HoleCard({
   mulliganCounts,
   teeShotRestrictionActive,
   playersNeedingTeeShots,
+  pendingStatus,
   onSaved,
 }: {
   team: Team;
@@ -516,13 +517,13 @@ function HoleCard({
   mulliganCounts: Map<string, number>;
   teeShotRestrictionActive: boolean;
   playersNeedingTeeShots: Player[];
+  pendingStatus: "pending" | "failed" | null;
   onSaved: () => void;
 }) {
   const qc = useQueryClient();
   const [strokes, setStrokes] = useState<number>(existing?.strokes ?? hole.par);
   const [teeShotPlayerId, setTeeShotPlayerId] = useState<string>(existing?.tee_shot_player_id ?? "");
   const [mulliganPlayerId, setMulliganPlayerId] = useState<string>(existing?.mulligan_player_id ?? "");
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reasonOpen, setReasonOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -548,7 +549,7 @@ function HoleCard({
   const requiresReason =
     !!existing && strokes < existing.strokes && isLateEdit;
 
-  const persist = async (editReason: string | null) => {
+  const persist = (editReason: string | null) => {
     if (isTexasScramble && !teeShotPlayerId) {
       setError("Select tee-shot player");
       return;
@@ -560,8 +561,7 @@ function HoleCard({
       return;
     }
     setError(null);
-    setSaving(true);
-    const payload = {
+    const payload: HoleScorePayload = {
       team_id: team.id,
       tournament_id: tournament.id,
       hole_number: hole.hole_number,
@@ -570,27 +570,24 @@ function HoleCard({
       mulligan_player_id: mulligansEnabled ? mulliganPlayerId || null : null,
       last_edit_reason: editReason,
     };
-    const { error } = await supabase
-      .from("hole_scores")
-      .upsert(payload, { onConflict: "team_id,hole_number" });
-    setSaving(false);
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    qc.invalidateQueries({ queryKey: ["captain-scores", team.id] });
+    // Enqueue: always succeeds locally, sync engine handles network.
+    getQueueForTeam(team.id).enqueue(payload);
+    // Refresh server-side data shortly in case we're online and the write lands fast.
+    setTimeout(() => {
+      qc.invalidateQueries({ queryKey: ["captain-scores", team.id] });
+    }, 1500);
     setReason("");
     setReasonOpen(false);
     onSaved();
   };
 
-  const save = async () => {
+  const save = () => {
     if (requiresReason) {
       setReason("");
       setReasonOpen(true);
       return;
     }
-    await persist(null);
+    persist(null);
   };
 
   const diff = strokes - hole.par;
