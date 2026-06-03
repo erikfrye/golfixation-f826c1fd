@@ -15,6 +15,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { getQueueForTeam, type HoleScorePayload } from "@/lib/offline-queue";
+import { useOfflineQueue } from "@/hooks/use-offline-queue";
+import { SyncStatusPill } from "@/components/captain/sync-status-pill";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
   validateSearch: (search: Record<string, unknown>) => ({
