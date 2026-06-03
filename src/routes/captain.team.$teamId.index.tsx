@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, Minus, Plus, Check, Loader2, ChevronRight, Grid3x3, X } from "lucide-react";
+import { ChevronLeft, Minus, Plus, Check, ChevronRight, Grid3x3, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
 import {
@@ -15,6 +15,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { getQueueForTeam, type HoleScorePayload } from "@/lib/offline-queue";
+import { useOfflineQueue } from "@/hooks/use-offline-queue";
+import { SyncStatusPill } from "@/components/captain/sync-status-pill";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -127,7 +130,34 @@ function TeamScoring() {
   const tournament = tournamentQ.data;
   const holes = holesQ.data ?? [];
   const players = playersQ.data ?? [];
-  const scores = scoresQ.data ?? [];
+  const serverScores = scoresQ.data ?? [];
+
+  const { items: queueItems } = useOfflineQueue(teamId);
+
+  const pendingByHole = useMemo(() => {
+    const m = new Map<number, (typeof queueItems)[number]>();
+    queueItems.forEach((i) => m.set(i.holeNumber, i));
+    return m;
+  }, [queueItems]);
+
+  // Overlay queued (unsynced) score writes on top of server-confirmed rows
+  const scores = useMemo<Score[]>(() => {
+    if (queueItems.length === 0) return serverScores;
+    const byHole = new Map<number, Score>();
+    serverScores.forEach((s) => byHole.set(s.hole_number, s));
+    queueItems.forEach((q) => {
+      const existing = byHole.get(q.holeNumber);
+      byHole.set(q.holeNumber, {
+        id: existing?.id ?? `pending-${q.id}`,
+        hole_number: q.holeNumber,
+        strokes: q.payload.strokes,
+        tee_shot_player_id: q.payload.tee_shot_player_id,
+        mulligan_player_id: q.payload.mulligan_player_id,
+        first_saved_at: existing?.first_saved_at ?? new Date(q.queuedAt).toISOString(),
+      });
+    });
+    return Array.from(byHole.values()).sort((a, b) => a.hole_number - b.hole_number);
+  }, [serverScores, queueItems]);
 
   const scoreByHole = useMemo(() => {
     const m = new Map<number, Score>();
@@ -234,6 +264,9 @@ function TeamScoring() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">{team.name}</h1>
               <p className="text-xs text-muted-foreground">{tournament.name}</p>
+              <div className="mt-2">
+                <SyncStatusPill teamId={team.id} />
+              </div>
             </div>
             <div className="rounded-md border border-border bg-card px-3 py-2 text-right">
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Through {scores.length}</div>
@@ -304,6 +337,13 @@ function TeamScoring() {
                 mulliganCounts={mulliganCounts}
                 teeShotRestrictionActive={teeShotRestrictionActive}
                 playersNeedingTeeShots={playersNeedingTeeShots}
+                pendingStatus={
+                  pendingByHole.has(activeHole.hole_number)
+                    ? (pendingByHole.get(activeHole.hole_number)!.attempts >= 3
+                        ? "failed"
+                        : "pending")
+                    : null
+                }
                 onSaved={() => {
                   if (nextHole) setCurrentHole(nextHole.hole_number);
                 }}
@@ -349,6 +389,7 @@ function TeamScoring() {
               holes={holes}
               current={effectiveHole}
               scoreByHole={scoreByHole}
+              pendingByHole={pendingByHole}
               onSelect={(n) => {
                 setCurrentHole(n);
                 setPickerOpen(false);
@@ -366,12 +407,14 @@ function HolePicker({
   holes,
   current,
   scoreByHole,
+  pendingByHole,
   onSelect,
   onClose,
 }: {
   holes: Hole[];
   current: number;
   scoreByHole: Map<number, Score>;
+  pendingByHole: Map<number, { attempts: number }>;
   onSelect: (n: number) => void;
   onClose: () => void;
 }) {
@@ -412,6 +455,8 @@ function HolePicker({
           {holes.map((h) => {
             const filled = scoreByHole.has(h.hole_number);
             const isCurrent = h.hole_number === current;
+            const pending = pendingByHole.get(h.hole_number);
+            const pendingFailed = pending && pending.attempts >= 3;
             return (
               <button
                 key={h.hole_number}
@@ -419,7 +464,7 @@ function HolePicker({
                 onClick={() => {
                   onSelect(h.hole_number);
                 }}
-                className={`flex h-14 flex-col items-center justify-center rounded-lg border text-base font-semibold ${
+                className={`relative flex h-14 flex-col items-center justify-center rounded-lg border text-base font-semibold ${
                   isCurrent
                     ? "border-primary text-primary"
                     : filled
@@ -429,6 +474,14 @@ function HolePicker({
               >
                 {h.hole_number}
                 <span className="text-[10px] font-normal text-muted-foreground">par {h.par}</span>
+                {pending && (
+                  <span
+                    className={`absolute right-1 top-1 h-2 w-2 rounded-full ${
+                      pendingFailed ? "bg-destructive" : "bg-amber-500"
+                    }`}
+                    aria-label={pendingFailed ? "Failed to sync" : "Pending sync"}
+                  />
+                )}
               </button>
             );
           })}
@@ -450,6 +503,7 @@ function HoleCard({
   mulliganCounts,
   teeShotRestrictionActive,
   playersNeedingTeeShots,
+  pendingStatus,
   onSaved,
 }: {
   team: Team;
@@ -463,13 +517,13 @@ function HoleCard({
   mulliganCounts: Map<string, number>;
   teeShotRestrictionActive: boolean;
   playersNeedingTeeShots: Player[];
+  pendingStatus: "pending" | "failed" | null;
   onSaved: () => void;
 }) {
   const qc = useQueryClient();
   const [strokes, setStrokes] = useState<number>(existing?.strokes ?? hole.par);
   const [teeShotPlayerId, setTeeShotPlayerId] = useState<string>(existing?.tee_shot_player_id ?? "");
   const [mulliganPlayerId, setMulliganPlayerId] = useState<string>(existing?.mulligan_player_id ?? "");
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reasonOpen, setReasonOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -495,7 +549,7 @@ function HoleCard({
   const requiresReason =
     !!existing && strokes < existing.strokes && isLateEdit;
 
-  const persist = async (editReason: string | null) => {
+  const persist = (editReason: string | null) => {
     if (isTexasScramble && !teeShotPlayerId) {
       setError("Select tee-shot player");
       return;
@@ -507,8 +561,7 @@ function HoleCard({
       return;
     }
     setError(null);
-    setSaving(true);
-    const payload = {
+    const payload: HoleScorePayload = {
       team_id: team.id,
       tournament_id: tournament.id,
       hole_number: hole.hole_number,
@@ -517,27 +570,24 @@ function HoleCard({
       mulligan_player_id: mulligansEnabled ? mulliganPlayerId || null : null,
       last_edit_reason: editReason,
     };
-    const { error } = await supabase
-      .from("hole_scores")
-      .upsert(payload, { onConflict: "team_id,hole_number" });
-    setSaving(false);
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    qc.invalidateQueries({ queryKey: ["captain-scores", team.id] });
+    // Enqueue: always succeeds locally, sync engine handles network.
+    getQueueForTeam(team.id).enqueue(payload);
+    // Refresh server-side data shortly in case we're online and the write lands fast.
+    setTimeout(() => {
+      qc.invalidateQueries({ queryKey: ["captain-scores", team.id] });
+    }, 1500);
     setReason("");
     setReasonOpen(false);
     onSaved();
   };
 
-  const save = async () => {
+  const save = () => {
     if (requiresReason) {
       setReason("");
       setReasonOpen(true);
       return;
     }
-    await persist(null);
+    persist(null);
   };
 
   const diff = strokes - hole.par;
@@ -657,6 +707,10 @@ function HoleCard({
       <div className="mt-4 flex items-center justify-between">
         {error ? (
           <p className="text-xs text-destructive">{error}</p>
+        ) : pendingStatus === "failed" ? (
+          <p className="text-[11px] text-destructive">Failed to sync — will retry</p>
+        ) : pendingStatus === "pending" ? (
+          <p className="text-[11px] text-amber-600 dark:text-amber-400">Pending sync</p>
         ) : existing ? (
           <p className="text-[11px] text-muted-foreground">Saved</p>
         ) : (
@@ -665,15 +719,15 @@ function HoleCard({
         <button
           type="button"
           onClick={save}
-          disabled={!dirty || saving || mulliganOverLimit}
+          disabled={!dirty || mulliganOverLimit}
           className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          <Check className="h-4 w-4" />
           {existing ? (dirty ? "Update & next" : "Saved") : "Save & next"}
         </button>
       </div>
 
-      <AlertDialog open={reasonOpen} onOpenChange={(o) => !saving && setReasonOpen(o)}>
+      <AlertDialog open={reasonOpen} onOpenChange={(o) => setReasonOpen(o)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Lowering a saved score</AlertDialogTitle>
@@ -695,15 +749,14 @@ function HoleCard({
             {reason.trim().length}/500 — minimum 5 characters
           </p>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              disabled={saving || reason.trim().length < 5}
+              disabled={reason.trim().length < 5}
               onClick={(e) => {
                 e.preventDefault();
-                void persist(reason.trim());
+                persist(reason.trim());
               }}
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Save change
             </AlertDialogAction>
           </AlertDialogFooter>
