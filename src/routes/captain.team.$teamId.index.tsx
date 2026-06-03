@@ -407,12 +407,14 @@ function HolePicker({
   holes,
   current,
   scoreByHole,
+  pendingByHole,
   onSelect,
   onClose,
 }: {
   holes: Hole[];
   current: number;
   scoreByHole: Map<number, Score>;
+  pendingByHole: Map<number, { attempts: number }>;
   onSelect: (n: number) => void;
   onClose: () => void;
 }) {
@@ -453,6 +455,8 @@ function HolePicker({
           {holes.map((h) => {
             const filled = scoreByHole.has(h.hole_number);
             const isCurrent = h.hole_number === current;
+            const pending = pendingByHole.get(h.hole_number);
+            const pendingFailed = pending && pending.attempts >= 3;
             return (
               <button
                 key={h.hole_number}
@@ -460,7 +464,7 @@ function HolePicker({
                 onClick={() => {
                   onSelect(h.hole_number);
                 }}
-                className={`flex h-14 flex-col items-center justify-center rounded-lg border text-base font-semibold ${
+                className={`relative flex h-14 flex-col items-center justify-center rounded-lg border text-base font-semibold ${
                   isCurrent
                     ? "border-primary text-primary"
                     : filled
@@ -470,6 +474,14 @@ function HolePicker({
               >
                 {h.hole_number}
                 <span className="text-[10px] font-normal text-muted-foreground">par {h.par}</span>
+                {pending && (
+                  <span
+                    className={`absolute right-1 top-1 h-2 w-2 rounded-full ${
+                      pendingFailed ? "bg-destructive" : "bg-amber-500"
+                    }`}
+                    aria-label={pendingFailed ? "Failed to sync" : "Pending sync"}
+                  />
+                )}
               </button>
             );
           })}
