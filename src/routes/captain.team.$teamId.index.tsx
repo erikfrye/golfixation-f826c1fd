@@ -707,6 +707,10 @@ function HoleCard({
       <div className="mt-4 flex items-center justify-between">
         {error ? (
           <p className="text-xs text-destructive">{error}</p>
+        ) : pendingStatus === "failed" ? (
+          <p className="text-[11px] text-destructive">Failed to sync — will retry</p>
+        ) : pendingStatus === "pending" ? (
+          <p className="text-[11px] text-amber-600 dark:text-amber-400">Pending sync</p>
         ) : existing ? (
           <p className="text-[11px] text-muted-foreground">Saved</p>
         ) : (
@@ -715,15 +719,15 @@ function HoleCard({
         <button
           type="button"
           onClick={save}
-          disabled={!dirty || saving || mulliganOverLimit}
+          disabled={!dirty || mulliganOverLimit}
           className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          <Check className="h-4 w-4" />
           {existing ? (dirty ? "Update & next" : "Saved") : "Save & next"}
         </button>
       </div>
 
-      <AlertDialog open={reasonOpen} onOpenChange={(o) => !saving && setReasonOpen(o)}>
+      <AlertDialog open={reasonOpen} onOpenChange={(o) => setReasonOpen(o)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Lowering a saved score</AlertDialogTitle>
@@ -745,15 +749,14 @@ function HoleCard({
             {reason.trim().length}/500 — minimum 5 characters
           </p>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              disabled={saving || reason.trim().length < 5}
+              disabled={reason.trim().length < 5}
               onClick={(e) => {
                 e.preventDefault();
-                void persist(reason.trim());
+                persist(reason.trim());
               }}
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Save change
             </AlertDialogAction>
           </AlertDialogFooter>
