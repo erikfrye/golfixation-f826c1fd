@@ -264,6 +264,9 @@ function TeamScoring() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">{team.name}</h1>
               <p className="text-xs text-muted-foreground">{tournament.name}</p>
+              <div className="mt-2">
+                <SyncStatusPill teamId={team.id} />
+              </div>
             </div>
             <div className="rounded-md border border-border bg-card px-3 py-2 text-right">
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Through {scores.length}</div>
@@ -334,6 +337,13 @@ function TeamScoring() {
                 mulliganCounts={mulliganCounts}
                 teeShotRestrictionActive={teeShotRestrictionActive}
                 playersNeedingTeeShots={playersNeedingTeeShots}
+                pendingStatus={
+                  pendingByHole.has(activeHole.hole_number)
+                    ? (pendingByHole.get(activeHole.hole_number)!.attempts >= 3
+                        ? "failed"
+                        : "pending")
+                    : null
+                }
                 onSaved={() => {
                   if (nextHole) setCurrentHole(nextHole.hole_number);
                 }}
@@ -379,6 +389,7 @@ function TeamScoring() {
               holes={holes}
               current={effectiveHole}
               scoreByHole={scoreByHole}
+              pendingByHole={pendingByHole}
               onSelect={(n) => {
                 setCurrentHole(n);
                 setPickerOpen(false);
