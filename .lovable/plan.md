@@ -1,53 +1,56 @@
-# Anti-Cheat & Score Integrity Plan
+## Goal
 
-Today, captains can freely insert/update/delete `hole_scores` while the tournament is `active`. That's necessary for corrections, but it's also the cheat surface. The fix isn't to lock editing — it's to make edits **visible, attributable, and reviewable**.
+Let captains keep scoring on flaky/no signal. Saves go to a local queue first, sync in the background when online, and the UI clearly shows what's pending.
 
-Below are tiered options, lightest to heaviest. They stack; pick any combination.
+## Behavior
 
-## Tier 1 — Detection (audit trail)
+**Saving a hole**
+- "Save & next" always succeeds locally — write to an IndexedDB queue *and* optimistically update the React Query cache so the hole shows as scored immediately and the app advances to the next hole.
+- If online, attempt a Supabase upsert right away. On success, remove from queue. On failure (network error / offline), leave it queued and show pending state.
+- If offline, skip the network call entirely and queue.
 
-The single highest-leverage change. Without it, nothing else matters.
+**Sync engine**
+- A small singleton (`src/lib/offline-queue.ts`) using IndexedDB (via `idb-keyval` — already lightweight, or a hand-rolled IndexedDB wrapper to avoid a new dep).
+- Each queued item: `{ id, teamId, payload, attempts, lastError, queuedAt }`. `id = teamId:holeNumber` so re-edits of the same hole collapse to one pending write (latest wins).
+- Auto-flush triggers: `online` event, app focus/visibility regained, app load, every ~20s while items remain, and immediately after enqueue when navigator is online.
+- Per-item retry with backoff (e.g. 2s, 5s, 15s, 30s cap). Failures keep the item queued; only a Supabase response error that is clearly non-retryable (e.g. constraint violation) marks the item as `failed` for manual attention.
+- Auth: queued writes use the existing `supabase` client which already holds the session; if the session is missing on flush, leave items queued.
 
-- New table `hole_score_audit` (append-only): `id`, `tournament_id`, `team_id`, `hole_number`, `action` (`insert`/`update`/`delete`), `old_strokes`, `new_strokes`, `old_tee_shot_player_id`, `new_tee_shot_player_id`, `old_mulligan_player_id`, `new_mulligan_player_id`, `changed_by` (auth.uid), `changed_by_email`, `changed_at`, `client_ip` (optional, from server fn), `user_agent` (optional).
-- Postgres trigger on `hole_scores` (AFTER INSERT/UPDATE/DELETE) writes to the audit table using `auth.uid()` and `auth.jwt() ->> 'email'`.
-- RLS: only admins can SELECT; nobody can UPDATE/DELETE. Captains can't even read their own audit log (prevents tailoring edits).
-- Admin UI: a "Score history" tab per team showing every change with timestamp, who, before → after, and a filter for "edits made >X minutes after first entry".
+**Late-edit reason flow**
+- The reason dialog still triggers based on the *currently known* `first_saved_at`. If the original insert is itself still pending sync, no reason is required (treat as first save). Once synced, future lowering edits past the 15‑min window will prompt as today.
 
-This alone deters most cheating because captains know edits are logged.
+**UI indicators (captain screens only)**
 
-## Tier 2 — Friction on suspicious edits
+1. **Global pill** in the team scoring header: `Online · all synced` / `Offline · N pending` / `Syncing N…` / `N failed — tap to retry`. Tap opens a small sheet listing pending holes with their strokes and last error; includes a "Retry now" button.
+2. **Per-hole badge** on the hole picker grid and on the active hole card: a small dot/icon indicating `pending` (amber) or `failed` (red) for that hole. Synced holes look as they do today.
+3. **Toast** on transition online → flushed (`All scores synced`) and offline (`You're offline — scores will sync when you reconnect`).
 
-Make late edits possible but visible to everyone.
+**Optimistic data**
+- The `captain-scores` query merges server scores with queued items so totals, tee-shot counts, mulligan counts, "through N", and next-unplayed-hole logic all reflect pending writes. Pending items get a synthetic `id` and `first_saved_at = queuedAt` so the late-edit math stays consistent locally.
+- Realtime/refetch from Supabase still wins for synced rows; pending items overlay until removed from the queue.
 
-- **Lock window**: after a hole's score is first saved, allow free edits for N minutes (e.g. 15). After that, edits still work but get flagged `was_late_edited = true`.
-- **Public leaderboard badge**: a small "✎ edited" icon next to any hole that was changed after the lock window. Tap to see "Edited 2h after submission". Pure social pressure — extremely effective.
-- **Edit reason required**: after the lock window, captains must enter a short reason ("miscounted on hole 4"). Stored in audit.
+**Scope**
+- Frontend only. No schema changes, no server function changes. RLS, audit trigger, and `last_edit_reason` plumbing all keep working unchanged — the queue simply replays the same `upsert` call the page makes today.
+- Only the captain scoring route uses the queue. Admin and leaderboard views are unchanged.
 
-## Tier 3 — Cross-verification
+## Files
 
-Require a second party to confirm.
+- New `src/lib/offline-queue.ts` — IndexedDB-backed queue, singleton sync loop, subscribe API for React.
+- New `src/hooks/use-offline-queue.ts` — React hook exposing `{ status, pendingByHole, failedByHole, retryAll }`.
+- New `src/components/captain/sync-status-pill.tsx` — the header pill + details sheet.
+- Edit `src/routes/captain.team.$teamId.index.tsx` — replace direct upsert in `persist()` with `queue.enqueue(...)`, merge pending items into `scores`, render the pill, add per-hole indicators on the picker + hole card.
+- Edit `src/routes/captain.team.$teamId.tsx` (parent layout, if it has chrome) — only if needed to host the pill globally; otherwise keep the pill on the index route.
 
-- **Opponent attestation**: each team's score on a hole is "pending" until another team in the same group taps "confirm". Adds a small workflow but mirrors how paper scorecards work (marker signs the card).
-- **Admin approval for late edits**: edits outside the lock window go into a `pending_edits` queue and don't affect the leaderboard until an admin approves. Heavier but bulletproof.
+## Technical notes
 
-## Tier 4 — Lock on completion
+- Use the browser `online`/`offline` events plus `document.visibilitychange` for flush triggers; treat `navigator.onLine === false` as a hint, not truth — always attempt and let failure re-queue.
+- Storage key per team to avoid cross-team bleed if a captain manages multiple teams: `golfixation:queue:{teamId}`.
+- Queue records store just the upsert payload (already serializable). No PII beyond what's already in the row.
+- Guard SSR: only touch IndexedDB/`window` inside `useEffect` / lazy init.
+- Keep the queue tiny — single file, no new deps; if IndexedDB feels heavy, fall back to `localStorage` keyed by team. IndexedDB is preferred for durability under iOS Safari memory pressure.
 
-- Add a per-team "round submitted" action. Once submitted, captain can no longer edit — only admin can, and every admin edit is audited and flagged on the leaderboard.
-- Auto-submit when all holes have a score.
+## Out of scope (call out, do not build)
 
-## Recommendation
-
-Start with **Tier 1 + the "edited" badge from Tier 2**. That's ~1 migration (audit table + trigger + RLS), one admin "Score history" view, and a small badge on the public leaderboard. It's low friction for honest teams, gives you full forensics, and the visible badge is the actual deterrent.
-
-If you want stronger guarantees later, layer in the lock window / edit reason, and eventually round submission.
-
-## Technical sketch (for the implementation phase)
-
-- Migration: `hole_score_audit` table + `audit_hole_scores()` trigger function + admin-only RLS.
-- Optional column on `hole_scores`: `first_saved_at timestamptz` (set on INSERT, never updated) so the UI can compute "edited X after submission" without joining the audit table.
-- Admin route: `/admin/tournaments/$id/audit` listing changes, filterable by team/hole/late-only.
-- Leaderboard: query `hole_scores.updated_at > first_saved_at + interval '15 min'` to render the badge.
-
----
-
-**Which tiers do you want me to build?** My suggestion: Tier 1 audit + the "edited" badge as a first pass, then we see if anything else is needed after the next tournament.
+- Offline reads of tournament/hole/player metadata. If the captain has never loaded the team while online, the page still needs network for first load.
+- Conflict resolution when two devices edit the same hole — last write wins, same as today.
+- Persistent queue across browser profile / device switches.
