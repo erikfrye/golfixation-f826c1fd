@@ -102,22 +102,26 @@ class TeamQueue {
 
   subscribe(fn: Listener): () => void {
     this.listeners.add(fn);
-    fn(this.snapshot());
     return () => {
       this.listeners.delete(fn);
     };
   }
 
+  private cachedSnapshot: QueueSnapshot | null = null;
+
   snapshot(): QueueSnapshot {
-    return {
+    if (this.cachedSnapshot) return this.cachedSnapshot;
+    this.cachedSnapshot = {
       items: [...this.items],
       syncing: this.syncing,
       online: isBrowser() ? navigator.onLine : true,
       lastSyncedAt: this.lastSyncedAt,
     };
+    return this.cachedSnapshot;
   }
 
   private notify() {
+    this.cachedSnapshot = null;
     const snap = this.snapshot();
     this.listeners.forEach((l) => l(snap));
   }
