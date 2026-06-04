@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, ChevronLeft, ChevronDown, ChevronRight, X, Pencil, Trophy, LogOut } from "lucide-react";
+import { LiveIndicator } from "@/components/live-indicator";
 import { AboutButton } from "@/components/about-dialog";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
 import { InstallPrompt } from "@/components/install-prompt";
