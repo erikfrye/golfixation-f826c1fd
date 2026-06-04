@@ -128,6 +128,24 @@ function TeamScoring() {
     },
   });
 
+  // Realtime subscription for this team's scores
+  useEffect(() => {
+    const channel = supabase
+      .channel(`captain-team-${teamId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "hole_scores", filter: `team_id=eq.${teamId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["captain-scores", teamId] });
+          setLastUpdated(new Date());
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [teamId, queryClient]);
+
   const team = teamQ.data;
   const tournament = tournamentQ.data;
   const holes = holesQ.data ?? [];
