@@ -58,6 +58,7 @@ function TeamScoring() {
   const [currentHole, setCurrentHole] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const queryClient = useQueryClient();
 
   const teamQ = useQuery({
     queryKey: ["captain-team", teamId],
