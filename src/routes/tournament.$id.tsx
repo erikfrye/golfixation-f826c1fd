@@ -400,6 +400,7 @@ function TournamentPage() {
           </div>
         </nav>
       )}
+      {!captainTeamId && <InstallPrompt />}
     </div>
   );
 }
