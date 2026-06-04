@@ -57,6 +57,7 @@ function TeamScoring() {
   const { from } = Route.useSearch();
   const [currentHole, setCurrentHole] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const teamQ = useQuery({
     queryKey: ["captain-team", teamId],
