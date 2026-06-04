@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, ChevronLeft, ChevronDown, ChevronRight, X, Pencil, Trophy, LogOut } from "lucide-react";
+import { LiveIndicator } from "@/components/live-indicator";
 import { AboutButton } from "@/components/about-dialog";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
 import { InstallPrompt } from "@/components/install-prompt";
@@ -316,9 +317,9 @@ function TournamentPage() {
                     : ""}
                 </p>
               )}
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                Last updated {lastUpdated.toLocaleTimeString()}
-              </p>
+              <div className="mt-1.5 flex items-center gap-2">
+                <LiveIndicator lastUpdated={lastUpdated} />
+              </div>
             </div>
 
             {leaderboard.length === 0 ? (

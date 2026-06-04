@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getQueueForTeam, type HoleScorePayload } from "@/lib/offline-queue";
 import { useOfflineQueue } from "@/hooks/use-offline-queue";
 import { SyncStatusPill } from "@/components/captain/sync-status-pill";
+import { LiveIndicator } from "@/components/live-indicator";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -56,6 +57,8 @@ function TeamScoring() {
   const { from } = Route.useSearch();
   const [currentHole, setCurrentHole] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const queryClient = useQueryClient();
 
   const teamQ = useQuery({
     queryKey: ["captain-team", teamId],
@@ -125,6 +128,24 @@ function TeamScoring() {
       return (data ?? []) as Score[];
     },
   });
+
+  // Realtime subscription for this team's scores
+  useEffect(() => {
+    const channel = supabase
+      .channel(`captain-team-${teamId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "hole_scores", filter: `team_id=eq.${teamId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["captain-scores", teamId] });
+          setLastUpdated(new Date());
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [teamId, queryClient]);
 
   const team = teamQ.data;
   const tournament = tournamentQ.data;
@@ -264,8 +285,9 @@ function TeamScoring() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">{team.name}</h1>
               <p className="text-xs text-muted-foreground">{tournament.name}</p>
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <SyncStatusPill teamId={team.id} />
+                <LiveIndicator lastUpdated={lastUpdated} />
               </div>
             </div>
             <div className="rounded-md border border-border bg-card px-3 py-2 text-right">
