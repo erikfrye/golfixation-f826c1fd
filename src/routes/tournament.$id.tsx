@@ -317,9 +317,9 @@ function TournamentPage() {
                     : ""}
                 </p>
               )}
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                Last updated {lastUpdated.toLocaleTimeString()}
-              </p>
+              <div className="mt-1.5 flex items-center gap-2">
+                <LiveIndicator lastUpdated={lastUpdated} />
+              </div>
             </div>
 
             {leaderboard.length === 0 ? (
