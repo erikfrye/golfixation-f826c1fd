@@ -807,6 +807,30 @@ function HoleCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={validationOpen} onOpenChange={(o) => { if (!o) setValidationOpen(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unusual score</AlertDialogTitle>
+            <AlertDialogDescription>
+              {validationMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setValidationOpen(false); setValidationMessage(null); }}>
+              Cancel, let me fix it
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                attemptSave();
+              }}
+            >
+              Yes, save anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
