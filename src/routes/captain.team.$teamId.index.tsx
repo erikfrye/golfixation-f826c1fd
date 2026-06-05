@@ -549,6 +549,8 @@ function HoleCard({
   const [error, setError] = useState<string | null>(null);
   const [reasonOpen, setReasonOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const [validationOpen, setValidationOpen] = useState(false);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   const dirty =
     !existing ||
@@ -570,6 +572,8 @@ function HoleCard({
     Date.now() - new Date(existing.first_saved_at).getTime() > LATE_EDIT_THRESHOLD_MS;
   const requiresReason =
     !!existing && strokes < existing.strokes && isLateEdit;
+
+  const isExtreme = strokes >= hole.par * 2 || strokes <= hole.par - 3;
 
   const persist = (editReason: string | null) => {
     if (isTexasScramble && !teeShotPlayerId) {
@@ -600,16 +604,35 @@ function HoleCard({
     }, 1500);
     setReason("");
     setReasonOpen(false);
+    setValidationOpen(false);
+    setValidationMessage(null);
     onSaved();
   };
 
-  const save = () => {
+  const attemptSave = () => {
     if (requiresReason) {
       setReason("");
       setReasonOpen(true);
       return;
     }
     persist(null);
+  };
+
+  const save = () => {
+    if (isExtreme) {
+      if (strokes >= hole.par * 2) {
+        setValidationMessage(
+          `You entered ${strokes} strokes on a par ${hole.par}. That's double par or worse — likely a typo?`,
+        );
+      } else {
+        setValidationMessage(
+          `You entered ${strokes} strokes on a par ${hole.par}. That's ${hole.par - 3} under par or better — likely a typo?`,
+        );
+      }
+      setValidationOpen(true);
+      return;
+    }
+    attemptSave();
   };
 
   const diff = strokes - hole.par;
@@ -780,6 +803,30 @@ function HoleCard({
               }}
             >
               Save change
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={validationOpen} onOpenChange={(o) => { if (!o) setValidationOpen(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unusual score</AlertDialogTitle>
+            <AlertDialogDescription>
+              {validationMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setValidationOpen(false); setValidationMessage(null); }}>
+              Cancel, let me fix it
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                attemptSave();
+              }}
+            >
+              Yes, save anyway
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
