@@ -622,11 +622,11 @@ function HoleCard({
     if (isExtreme) {
       if (strokes >= hole.par * 2) {
         setValidationMessage(
-          `You entered ${strokes} strokes on a par ${hole.par}. That's double par or worse — likely a typo?`,
+          `You entered ${strokes} strokes on a par ${hole.par}. That's double par or worse — Was this a typo?`,
         );
       } else {
         setValidationMessage(
-          `You entered ${strokes} strokes on a par ${hole.par}. That's ${hole.par - 3} under par or better — likely a typo?`,
+          `You entered ${strokes} strokes on a par ${hole.par}. That's ${hole.par - strokes} under par or better — Was this a typo?`,
         );
       }
       setValidationOpen(true);
