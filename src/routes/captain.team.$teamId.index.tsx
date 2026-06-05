@@ -202,7 +202,8 @@ function TeamScoring() {
     return counts;
   }, [scores]);
 
-  const isLoading = teamQ.isLoading || tournamentQ.isLoading || holesQ.isLoading || playersQ.isLoading || scoresQ.isLoading;
+  const isLoading =
+    teamQ.isLoading || tournamentQ.isLoading || holesQ.isLoading || playersQ.isLoading || scoresQ.isLoading;
   const isTexasScramble = tournament?.format === "texas_scramble";
   const mulligansEnabled = tournament?.mulligans_enabled ?? true;
 
@@ -236,9 +237,7 @@ function TeamScoring() {
 
   const playersNeedingTeeShots = useMemo(() => {
     if (!tournament || !isTexasScramble) return [] as Player[];
-    return players.filter(
-      (p) => (teeShotCounts.get(p.id) ?? 0) < tournament.tee_shot_minimum,
-    );
+    return players.filter((p) => (teeShotCounts.get(p.id) ?? 0) < tournament.tee_shot_minimum);
   }, [players, teeShotCounts, tournament, isTexasScramble]);
 
   const holesRemaining = (tournament?.num_holes ?? 0) - scores.length;
@@ -246,10 +245,7 @@ function TeamScoring() {
     isTexasScramble && teeShotsRequiredRemaining > 0 && teeShotsRequiredRemaining >= holesRemaining;
 
   const totalStrokes = scores.reduce((s, x) => s + x.strokes, 0);
-  const playedPar = scores.reduce(
-    (s, x) => s + (holes.find((h) => h.hole_number === x.hole_number)?.par ?? 0),
-    0,
-  );
+  const playedPar = scores.reduce((s, x) => s + (holes.find((h) => h.hole_number === x.hole_number)?.par ?? 0), 0);
   const net = totalStrokes - playedPar;
 
   const effectiveHole = currentHole ?? team?.start_hole ?? 1;
@@ -271,7 +267,10 @@ function TeamScoring() {
           Back to teams
         </Link>
       ) : (
-        <Link to="/captain" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        <Link
+          to="/captain"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
           <ChevronLeft className="h-3.5 w-3.5" />
           Back to teams
         </Link>
@@ -361,9 +360,9 @@ function TeamScoring() {
                 playersNeedingTeeShots={playersNeedingTeeShots}
                 pendingStatus={
                   pendingByHole.has(activeHole.hole_number)
-                    ? (pendingByHole.get(activeHole.hole_number)!.attempts >= 3
-                        ? "failed"
-                        : "pending")
+                    ? pendingByHole.get(activeHole.hole_number)!.attempts >= 3
+                      ? "failed"
+                      : "pending"
                     : null
                 }
                 onSaved={() => {
@@ -490,8 +489,8 @@ function HolePicker({
                   isCurrent
                     ? "border-primary text-primary"
                     : filled
-                    ? "border-border bg-muted text-foreground"
-                    : "border-border text-foreground"
+                      ? "border-border bg-muted text-foreground"
+                      : "border-border text-foreground"
                 }`}
               >
                 {h.hole_number}
@@ -560,18 +559,14 @@ function HoleCard({
 
   const mulliganPlayer = players.find((p) => p.id === mulliganPlayerId) ?? null;
   const mulliganAlreadyUsed = mulliganPlayerId
-    ? (mulliganCounts.get(mulliganPlayerId) ?? 0) -
-      (existing?.mulligan_player_id === mulliganPlayerId ? 1 : 0)
+    ? (mulliganCounts.get(mulliganPlayerId) ?? 0) - (existing?.mulligan_player_id === mulliganPlayerId ? 1 : 0)
     : 0;
-  const mulliganOverLimit =
-    !!mulliganPlayer && mulliganAlreadyUsed + 1 > mulliganPlayer.mulligans_total;
+  const mulliganOverLimit = !!mulliganPlayer && mulliganAlreadyUsed + 1 > mulliganPlayer.mulligans_total;
 
   const LATE_EDIT_THRESHOLD_MS = 15 * 60 * 1000;
   const isLateEdit =
-    !!existing?.first_saved_at &&
-    Date.now() - new Date(existing.first_saved_at).getTime() > LATE_EDIT_THRESHOLD_MS;
-  const requiresReason =
-    !!existing && strokes < existing.strokes && isLateEdit;
+    !!existing?.first_saved_at && Date.now() - new Date(existing.first_saved_at).getTime() > LATE_EDIT_THRESHOLD_MS;
+  const requiresReason = !!existing && strokes < existing.strokes && isLateEdit;
 
   const isExtreme = strokes >= hole.par * 2 || strokes <= hole.par - 3;
 
@@ -622,11 +617,11 @@ function HoleCard({
     if (isExtreme) {
       if (strokes >= hole.par * 2) {
         setValidationMessage(
-          `You entered ${strokes} strokes on a par ${hole.par}. That's double par or worse — Was this a typo?`,
+          `You entered ${strokes} strokes on a par ${hole.par}. That's double par or worse — Is this correct?`,
         );
       } else {
         setValidationMessage(
-          `You entered ${strokes} strokes on a par ${hole.par}. That's ${hole.par - strokes} under par or better — Was this a typo?`,
+          `You entered ${strokes} strokes on a par ${hole.par}. That's ${hole.par - strokes} under par or better — Is this correct?`,
         );
       }
       setValidationOpen(true);
@@ -637,7 +632,19 @@ function HoleCard({
 
   const diff = strokes - hole.par;
   const diffLabel =
-    diff === 0 ? "PAR" : diff === -1 ? "BIRDIE" : diff === -2 ? "EAGLE" : diff <= -3 ? "ALBATROSS" : diff === 1 ? "BOGEY" : diff === 2 ? "DBL BOGEY" : `+${diff}`;
+    diff === 0
+      ? "PAR"
+      : diff === -1
+        ? "BIRDIE"
+        : diff === -2
+          ? "EAGLE"
+          : diff <= -3
+            ? "ALBATROSS"
+            : diff === 1
+              ? "BOGEY"
+              : diff === 2
+                ? "DBL BOGEY"
+                : `+${diff}`;
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -681,10 +688,10 @@ function HoleCard({
             diff < 0
               ? "bg-primary/15 text-primary"
               : diff === 0
-              ? "bg-primary text-primary-foreground"
-              : diff === 1
-              ? "bg-muted text-foreground"
-              : "bg-destructive/15 text-destructive"
+                ? "bg-primary text-primary-foreground"
+                : diff === 1
+                  ? "bg-muted text-foreground"
+                  : "bg-destructive/15 text-destructive"
           }`}
         >
           {diffLabel}
@@ -716,35 +723,34 @@ function HoleCard({
             </label>
           )}
           {mulligansEnabled && (
-          <label className="block text-xs">
-            <span className="font-semibold text-foreground">Mulligan (optional)</span>
-            <select
-              value={mulliganPlayerId}
-              onChange={(e) => setMulliganPlayerId(e.target.value)}
-              className={`mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm ${
-                mulliganOverLimit ? "border-destructive" : "border-input"
-              }`}
-            >
-              <option value="">— none —</option>
-              {players.map((p) => {
-                const used = mulliganCounts.get(p.id) ?? 0;
-                const effective = used - (existing?.mulligan_player_id === p.id ? 1 : 0);
-                const exhausted = effective >= p.mulligans_total;
-                return (
-                  <option key={p.id} value={p.id}>
-                    {p.name} (used {used}/{p.mulligans_total})
-                    {exhausted ? " — none left" : ""}
-                  </option>
-                );
-              })}
-            </select>
-            {mulliganOverLimit && mulliganPlayer && (
-              <p className="mt-1 text-[11px] text-destructive">
-                {mulliganPlayer.name} has used all {mulliganPlayer.mulligans_total} mulligan
-                {mulliganPlayer.mulligans_total === 1 ? "" : "s"}.
-              </p>
-            )}
-          </label>
+            <label className="block text-xs">
+              <span className="font-semibold text-foreground">Mulligan (optional)</span>
+              <select
+                value={mulliganPlayerId}
+                onChange={(e) => setMulliganPlayerId(e.target.value)}
+                className={`mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm ${
+                  mulliganOverLimit ? "border-destructive" : "border-input"
+                }`}
+              >
+                <option value="">— none —</option>
+                {players.map((p) => {
+                  const used = mulliganCounts.get(p.id) ?? 0;
+                  const effective = used - (existing?.mulligan_player_id === p.id ? 1 : 0);
+                  const exhausted = effective >= p.mulligans_total;
+                  return (
+                    <option key={p.id} value={p.id}>
+                      {p.name} (used {used}/{p.mulligans_total}){exhausted ? " — none left" : ""}
+                    </option>
+                  );
+                })}
+              </select>
+              {mulliganOverLimit && mulliganPlayer && (
+                <p className="mt-1 text-[11px] text-destructive">
+                  {mulliganPlayer.name} has used all {mulliganPlayer.mulligans_total} mulligan
+                  {mulliganPlayer.mulligans_total === 1 ? "" : "s"}.
+                </p>
+              )}
+            </label>
           )}
         </div>
       )}
@@ -779,8 +785,8 @@ function HoleCard({
             <AlertDialogDescription>
               You're changing hole {hole.hole_number} from{" "}
               <span className="font-mono font-semibold text-foreground">{existing?.strokes}</span> to{" "}
-              <span className="font-mono font-semibold text-foreground">{strokes}</span>. Please
-              provide a brief reason for the correction. This will be logged with the change.
+              <span className="font-mono font-semibold text-foreground">{strokes}</span>. Please provide a brief reason
+              for the correction. This will be logged with the change.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Textarea
@@ -790,9 +796,7 @@ function HoleCard({
             rows={3}
             autoFocus
           />
-          <p className="text-[11px] text-muted-foreground">
-            {reason.trim().length}/500 — minimum 5 characters
-          </p>
+          <p className="text-[11px] text-muted-foreground">{reason.trim().length}/500 — minimum 5 characters</p>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
@@ -808,16 +812,24 @@ function HoleCard({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={validationOpen} onOpenChange={(o) => { if (!o) setValidationOpen(false); }}>
+      <AlertDialog
+        open={validationOpen}
+        onOpenChange={(o) => {
+          if (!o) setValidationOpen(false);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unusual score</AlertDialogTitle>
-            <AlertDialogDescription>
-              {validationMessage}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{validationMessage}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => { setValidationOpen(false); setValidationMessage(null); }}>
+            <AlertDialogCancel
+              onClick={() => {
+                setValidationOpen(false);
+                setValidationMessage(null);
+              }}
+            >
               Cancel, let me fix it
             </AlertDialogCancel>
             <AlertDialogAction
