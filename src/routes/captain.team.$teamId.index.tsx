@@ -549,6 +549,8 @@ function HoleCard({
   const [error, setError] = useState<string | null>(null);
   const [reasonOpen, setReasonOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const [validationOpen, setValidationOpen] = useState(false);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   const dirty =
     !existing ||
