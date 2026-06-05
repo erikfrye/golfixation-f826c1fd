@@ -573,6 +573,8 @@ function HoleCard({
   const requiresReason =
     !!existing && strokes < existing.strokes && isLateEdit;
 
+  const isExtreme = strokes >= hole.par * 2 || strokes <= hole.par - 3;
+
   const persist = (editReason: string | null) => {
     if (isTexasScramble && !teeShotPlayerId) {
       setError("Select tee-shot player");
@@ -602,16 +604,35 @@ function HoleCard({
     }, 1500);
     setReason("");
     setReasonOpen(false);
+    setValidationOpen(false);
+    setValidationMessage(null);
     onSaved();
   };
 
-  const save = () => {
+  const attemptSave = () => {
     if (requiresReason) {
       setReason("");
       setReasonOpen(true);
       return;
     }
     persist(null);
+  };
+
+  const save = () => {
+    if (isExtreme) {
+      if (strokes >= hole.par * 2) {
+        setValidationMessage(
+          `You entered ${strokes} strokes on a par ${hole.par}. That's double par or worse — likely a typo?`,
+        );
+      } else {
+        setValidationMessage(
+          `You entered ${strokes} strokes on a par ${hole.par}. That's ${hole.par - 3} under par or better — likely a typo?`,
+        );
+      }
+      setValidationOpen(true);
+      return;
+    }
+    attemptSave();
   };
 
   const diff = strokes - hole.par;
