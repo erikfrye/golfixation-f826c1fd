@@ -595,6 +595,62 @@ function HelpDialogButton({ tournament }: { tournament: Tournament }) {
   );
 }
 
+function SheetDialog({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const { mounted, leaving, close } = useExitAnimation(open, onClose, 180);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [mounted, close]);
+
+  if (!mounted || typeof document === "undefined") return null;
+  return createPortal(
+    <div
+      className={`fixed inset-0 z-40 flex items-end justify-center bg-foreground/40 pb-14 sm:items-center sm:pb-0 ${
+        leaving ? "animate-backdrop-out" : "animate-backdrop-in"
+      }`}
+      onClick={() => close()}
+    >
+      <div
+        className={`w-full max-w-sm rounded-t-2xl bg-card p-5 shadow-lg sm:rounded-2xl ${
+          leaving ? "animate-sheet-out" : "animate-sheet-in"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <button
+            type="button"
+            onClick={() => close()}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function HoleCard({
   team,
   tournament,
