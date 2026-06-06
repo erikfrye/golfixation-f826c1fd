@@ -282,7 +282,10 @@ function TeamScoring() {
         <>
           <div className="mt-3 flex flex-wrap items-end justify-between gap-2">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{team.name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-foreground">{team.name}</h1>
+                <HelpDialogButton tournament={tournament} />
+              </div>
               <p className="text-xs text-muted-foreground">{tournament.name}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <SyncStatusPill teamId={team.id} />
