@@ -5,16 +5,6 @@ import { createPortal } from "react-dom";
 import { ChevronLeft, Minus, Plus, Check, ChevronRight, Grid3x3, X, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { getQueueForTeam, type HoleScorePayload } from "@/lib/offline-queue";
 import { useOfflineQueue } from "@/hooks/use-offline-queue";
@@ -605,6 +595,62 @@ function HelpDialogButton({ tournament }: { tournament: Tournament }) {
   );
 }
 
+function SheetDialog({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const { mounted, leaving, close } = useExitAnimation(open, onClose, 180);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [mounted, close]);
+
+  if (!mounted || typeof document === "undefined") return null;
+  return createPortal(
+    <div
+      className={`fixed inset-0 z-40 flex items-end justify-center bg-foreground/40 pb-14 sm:items-center sm:pb-0 ${
+        leaving ? "animate-backdrop-out" : "animate-backdrop-in"
+      }`}
+      onClick={() => close()}
+    >
+      <div
+        className={`w-full max-w-sm rounded-t-2xl bg-card p-5 shadow-lg sm:rounded-2xl ${
+          leaving ? "animate-sheet-out" : "animate-sheet-in"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <button
+            type="button"
+            onClick={() => close()}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function HoleCard({
   team,
   tournament,
@@ -871,71 +917,76 @@ function HoleCard({
         </button>
       </div>
 
-      <AlertDialog open={reasonOpen} onOpenChange={(o) => setReasonOpen(o)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Lowering a saved score</AlertDialogTitle>
-            <AlertDialogDescription>
-              You're changing hole {hole.hole_number} from{" "}
-              <span className="font-mono font-semibold text-foreground">{existing?.strokes}</span> to{" "}
-              <span className="font-mono font-semibold text-foreground">{strokes}</span>. Please provide a brief reason
-              for the correction. This will be logged with the change.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value.slice(0, 500))}
-            placeholder="e.g. miscounted strokes on the green"
-            rows={3}
-            autoFocus
-          />
-          <p className="text-[11px] text-muted-foreground">{reason.trim().length}/500 — minimum 5 characters</p>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={reason.trim().length < 5}
-              onClick={(e) => {
-                e.preventDefault();
-                persist(reason.trim());
-              }}
-            >
-              Save change
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={validationOpen}
-        onOpenChange={(o) => {
-          if (!o) setValidationOpen(false);
-        }}
+      <SheetDialog
+        open={reasonOpen}
+        onClose={() => setReasonOpen(false)}
+        title="Lowering a saved score"
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Unusual score</AlertDialogTitle>
-            <AlertDialogDescription>{validationMessage}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => {
-                setValidationOpen(false);
-                setValidationMessage(null);
-              }}
-            >
-              Cancel, let me fix it
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                attemptSave();
-              }}
-            >
-              Yes, save anyway
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <p className="text-sm text-muted-foreground">
+          You're changing hole {hole.hole_number} from{" "}
+          <span className="font-mono font-semibold text-foreground">{existing?.strokes}</span> to{" "}
+          <span className="font-mono font-semibold text-foreground">{strokes}</span>. Please provide a brief reason
+          for the correction. This will be logged with the change.
+        </p>
+        <Textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value.slice(0, 500))}
+          placeholder="e.g. miscounted strokes on the green"
+          rows={3}
+          autoFocus
+          className="mt-3"
+        />
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {reason.trim().length}/500 — minimum 5 characters
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setReasonOpen(false)}
+            className="inline-flex h-9 items-center rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={reason.trim().length < 5}
+            onClick={() => persist(reason.trim())}
+            className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          >
+            Save change
+          </button>
+        </div>
+      </SheetDialog>
+
+      <SheetDialog
+        open={validationOpen}
+        onClose={() => {
+          setValidationOpen(false);
+          setValidationMessage(null);
+        }}
+        title="Unusual score"
+      >
+        <p className="text-sm text-muted-foreground">{validationMessage}</p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setValidationOpen(false);
+              setValidationMessage(null);
+            }}
+            className="inline-flex h-9 items-center rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            Cancel, let me fix it
+          </button>
+          <button
+            type="button"
+            onClick={() => attemptSave()}
+            className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground"
+          >
+            Yes, save anyway
+          </button>
+        </div>
+      </SheetDialog>
     </div>
   );
 }
