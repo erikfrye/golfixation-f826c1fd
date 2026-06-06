@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, Minus, Plus, Check, ChevronRight, Grid3x3, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ChevronLeft, Minus, Plus, Check, ChevronRight, Grid3x3, X, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
 import {
@@ -282,7 +283,10 @@ function TeamScoring() {
         <>
           <div className="mt-3 flex flex-wrap items-end justify-between gap-2">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{team.name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-foreground">{team.name}</h1>
+                <HelpDialogButton tournament={tournament} />
+              </div>
               <p className="text-xs text-muted-foreground">{tournament.name}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <SyncStatusPill teamId={team.id} />
@@ -509,6 +513,95 @@ function HolePicker({
         </div>
       </div>
     </div>
+  );
+}
+
+function HelpDialogButton({ tournament }: { tournament: Tournament }) {
+  const [open, setOpen] = useState(false);
+  const { mounted, leaving, close } = useExitAnimation(open, () => setOpen(false), 180);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [mounted, close]);
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Scoring help"
+        onClick={() => setOpen(true)}
+        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+      >
+        <HelpCircle className="h-4 w-4" />
+      </button>
+      {mounted &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className={`fixed inset-0 z-40 flex items-end justify-center bg-foreground/40 pb-14 sm:items-center sm:pb-0 ${
+              leaving ? "animate-backdrop-out" : "animate-backdrop-in"
+            }`}
+            onClick={() => close()}
+          >
+            <div
+              className={`w-full max-w-sm rounded-t-2xl bg-card p-5 shadow-lg sm:rounded-2xl ${
+                leaving ? "animate-sheet-out" : "animate-sheet-in"
+              }`}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">How scoring works</h3>
+                <button
+                  type="button"
+                  onClick={() => close()}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="space-y-4 text-sm text-foreground">
+                {tournament.format === "texas_scramble" && (
+                  <div>
+                    <h4 className="font-semibold text-foreground">Tee-shot minimums</h4>
+                    <p className="mt-1 text-muted-foreground">
+                      Every player must have at least {tournament.tee_shot_minimum} of their tee shots selected across
+                      the round. The tracker at the top shows how many each player still needs. If you are running out
+                      of holes, the app will warn you and restrict tee-shot choices to players who still need them.
+                    </p>
+                  </div>
+                )}
+                {tournament.mulligans_enabled && (
+                  <div>
+                    <h4 className="font-semibold text-foreground">Mulligans</h4>
+                    <p className="mt-1 text-muted-foreground">
+                      Each player has a set number of mulligans they can use during the round. You can assign a mulligan
+                      to any player on a hole. Once a player has used all their allotted mulligans, they cannot use
+                      any more.
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <h4 className="font-semibold text-foreground">Late-edit policy</h4>
+                  <p className="mt-1 text-muted-foreground">
+                    After a score has been saved for more than 15 minutes, lowering the stroke count requires a reason.
+                    This helps tournament admins track changes and catch mistakes. Increasing a score or editing within
+                    15 minutes does not require a reason.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
 
