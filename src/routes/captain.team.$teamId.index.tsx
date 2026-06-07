@@ -516,7 +516,12 @@ function HelpDialogButton({ tournament }: { tournament: Tournament }) {
       if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [mounted, close]);
 
   return (
@@ -533,7 +538,7 @@ function HelpDialogButton({ tournament }: { tournament: Tournament }) {
         typeof document !== "undefined" &&
         createPortal(
           <div
-            className={`fixed inset-0 z-40 flex items-end justify-center overflow-y-auto bg-foreground/40 p-4 sm:items-center ${
+            className={`fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-foreground/40 p-4 ${
               leaving ? "animate-backdrop-out" : "animate-backdrop-in"
             }`}
             onClick={() => close()}
