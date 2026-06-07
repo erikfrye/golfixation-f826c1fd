@@ -533,20 +533,20 @@ function HelpDialogButton({ tournament }: { tournament: Tournament }) {
         typeof document !== "undefined" &&
         createPortal(
           <div
-            className={`fixed inset-0 z-40 flex items-end justify-center bg-foreground/40 pb-14 sm:items-center sm:pb-0 ${
+            className={`fixed inset-0 z-40 flex items-end justify-center overflow-y-auto bg-foreground/40 p-4 sm:items-center ${
               leaving ? "animate-backdrop-out" : "animate-backdrop-in"
             }`}
             onClick={() => close()}
           >
             <div
-              className={`w-full max-w-sm rounded-t-2xl bg-card p-5 shadow-lg sm:rounded-2xl ${
+              className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col rounded-2xl bg-card shadow-lg ${
                 leaving ? "animate-sheet-out" : "animate-sheet-in"
               }`}
               onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
             >
-              <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center justify-between border-b border-border px-5 py-4">
                 <h3 className="text-sm font-semibold text-foreground">How scoring works</h3>
                 <button
                   type="button"
@@ -557,7 +557,7 @@ function HelpDialogButton({ tournament }: { tournament: Tournament }) {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="space-y-4 text-sm text-foreground">
+              <div className="space-y-4 overflow-y-auto px-5 py-4 text-sm text-foreground">
                 {tournament.format === "texas_scramble" && (
                   <div>
                     <h4 className="font-semibold text-foreground">Tee-shot minimums</h4>
@@ -620,20 +620,20 @@ function SheetDialog({
   if (!mounted || typeof document === "undefined") return null;
   return createPortal(
     <div
-      className={`fixed inset-0 z-40 flex items-end justify-center bg-foreground/40 pb-14 sm:items-center sm:pb-0 ${
+      className={`fixed inset-0 z-40 flex items-end justify-center overflow-y-auto bg-foreground/40 p-4 sm:items-center ${
         leaving ? "animate-backdrop-out" : "animate-backdrop-in"
       }`}
       onClick={() => close()}
     >
       <div
-        className={`w-full max-w-sm rounded-t-2xl bg-card p-5 shadow-lg sm:rounded-2xl ${
+        className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col rounded-2xl bg-card shadow-lg ${
           leaving ? "animate-sheet-out" : "animate-sheet-in"
         }`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           <button
             type="button"
@@ -644,7 +644,7 @@ function SheetDialog({
             <X className="h-4 w-4" />
           </button>
         </div>
-        {children}
+        <div className="overflow-y-auto px-5 py-4">{children}</div>
       </div>
     </div>,
     document.body,
