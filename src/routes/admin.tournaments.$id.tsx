@@ -134,7 +134,7 @@ function EditTournament() {
         <h1 className="text-2xl font-bold text-foreground">Edit tournament</h1>
         <div className="flex gap-2">
           <Link
-            to="/admin/tournaments/$id_/audit"
+            to="/admin/tournaments/$id/audit"
             params={{ id }}
             className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent"
           >
