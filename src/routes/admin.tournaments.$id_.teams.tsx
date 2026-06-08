@@ -102,7 +102,11 @@ function ManageTeams() {
   };
 
   const updatePlayer = async (playerId: string, patch: Partial<Player>) => {
-    await supabase.from("team_players").update(patch).eq("id", playerId);
+    const { error } = await supabase.from("team_players").update(patch).eq("id", playerId);
+    if (error) {
+      alert(`Failed to update player: ${error.message}`);
+      return;
+    }
     refresh();
   };
 
