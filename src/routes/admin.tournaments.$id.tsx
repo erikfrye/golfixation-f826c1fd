@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronLeft, Users, Trash2, History } from "lucide-react";
@@ -48,6 +48,7 @@ function EditTournament() {
   const [teeMin, setTeeMin] = useState(1);
   const [about, setAbout] = useState("");
   const [mulligansEnabled, setMulligansEnabled] = useState(true);
+  const parRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [startDate, setStartDate] = useState("");
   const [startFormat, setStartFormat] = useState<"tee_time" | "shotgun">("tee_time");
   const [holes, setHoles] = useState<HoleRow[]>([]);
@@ -253,14 +254,25 @@ function EditTournament() {
               <label key={h.id} className="flex flex-col items-center text-xs">
                 <span className="text-muted-foreground">#{h.hole_number}</span>
                 <input
+                  ref={(el) => { parRefs.current[idx] = el; }}
                   type="number"
                   min={3}
                   max={6}
                   value={h.par}
                   onFocus={(e) => e.target.select()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const next = parRefs.current[idx + 1];
+                      if (next) next.focus();
+                      else e.currentTarget.blur();
+                    }
+                  }}
                   onChange={(e) => {
                     const par = parseInt(e.target.value) || 4;
                     setHoles((prev) => prev.map((x, i) => (i === idx ? { ...x, par } : x)));
+                    const next = parRefs.current[idx + 1];
+                    if (next) next.focus();
                   }}
                   className="mt-1 w-12 rounded-md border border-input bg-background px-1.5 py-1 text-center text-sm"
                 />
