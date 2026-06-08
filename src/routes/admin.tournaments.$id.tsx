@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronLeft, Users, Trash2, History } from "lucide-react";
@@ -48,6 +48,7 @@ function EditTournament() {
   const [teeMin, setTeeMin] = useState(1);
   const [about, setAbout] = useState("");
   const [mulligansEnabled, setMulligansEnabled] = useState(true);
+  const parRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [startDate, setStartDate] = useState("");
   const [startFormat, setStartFormat] = useState<"tee_time" | "shotgun">("tee_time");
   const [holes, setHoles] = useState<HoleRow[]>([]);
