@@ -227,11 +227,14 @@ function ManageTeams() {
                         <label className="flex items-center gap-1 text-xs text-muted-foreground">
                           Mulligans
                           <input
+                            key={p.mulligans_total}
                             type="number"
                             min={0}
                             defaultValue={p.mulligans_total}
+                            onFocus={(e) => e.target.select()}
                             onBlur={(e) => {
-                              const n = parseInt(e.target.value) || 0;
+                              const parsed = parseInt(e.target.value, 10);
+                              const n = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
                               if (n !== p.mulligans_total)
                                 updatePlayer(p.id, { mulligans_total: n });
                             }}
