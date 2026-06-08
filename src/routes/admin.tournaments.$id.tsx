@@ -254,14 +254,25 @@ function EditTournament() {
               <label key={h.id} className="flex flex-col items-center text-xs">
                 <span className="text-muted-foreground">#{h.hole_number}</span>
                 <input
+                  ref={(el) => { parRefs.current[idx] = el; }}
                   type="number"
                   min={3}
                   max={6}
                   value={h.par}
                   onFocus={(e) => e.target.select()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const next = parRefs.current[idx + 1];
+                      if (next) next.focus();
+                      else e.currentTarget.blur();
+                    }
+                  }}
                   onChange={(e) => {
                     const par = parseInt(e.target.value) || 4;
                     setHoles((prev) => prev.map((x, i) => (i === idx ? { ...x, par } : x)));
+                    const next = parRefs.current[idx + 1];
+                    if (next) next.focus();
                   }}
                   className="mt-1 w-12 rounded-md border border-input bg-background px-1.5 py-1 text-center text-sm"
                 />
