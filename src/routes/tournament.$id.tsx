@@ -243,6 +243,10 @@ function TournamentPage() {
   const tournament = tournamentQ.data;
   const totalHoles = tournament?.num_holes ?? 18;
   const mulligansEnabled = tournament?.mulligans_enabled ?? true;
+  const isPastTournament =
+    tournament?.status === "completed" &&
+    (!!tournament?.start_date &&
+      new Date(tournament.start_date).getTime() < Date.now() - 14 * 24 * 60 * 60 * 1000);
 
   return (
     <div className={`min-h-screen bg-background ${captainTeamId ? "pb-16" : ""}`}>
