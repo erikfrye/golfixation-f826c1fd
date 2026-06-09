@@ -243,6 +243,10 @@ function TournamentPage() {
   const tournament = tournamentQ.data;
   const totalHoles = tournament?.num_holes ?? 18;
   const mulligansEnabled = tournament?.mulligans_enabled ?? true;
+  const isPastTournament =
+    tournament?.status === "completed" &&
+    (!!tournament?.start_date &&
+      new Date(tournament.start_date).getTime() < Date.now() - 14 * 24 * 60 * 60 * 1000);
 
   return (
     <div className={`min-h-screen bg-background ${captainTeamId ? "pb-16" : ""}`}>
@@ -285,9 +289,12 @@ function TournamentPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-6">
-        <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        <Link
+          to={isPastTournament ? "/tournaments/past" : "/"}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
           <ChevronLeft className="h-3.5 w-3.5" />
-          Back to tournaments
+          {isPastTournament ? "Back to archive" : "Back to tournaments"}
         </Link>
         {isLoading ? (
           <div className="mt-4 h-32 animate-pulse rounded-lg bg-muted" />
