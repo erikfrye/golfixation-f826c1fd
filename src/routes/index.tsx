@@ -141,6 +141,15 @@ function Index() {
             ))}
           </ul>
         )}
+
+        <div className="mt-8 text-center">
+          <Link
+            to="/tournaments/past"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            View past tournaments →
+          </Link>
+        </div>
       </main>
     </div>
   );
