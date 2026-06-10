@@ -67,9 +67,7 @@ function EditTournament() {
       setMulligansEnabled(tQ.data.mulligans_enabled ?? true);
       setStartFormat((tQ.data.start_format as "tee_time" | "shotgun") ?? "tee_time");
       setStartDate(
-        tQ.data.start_date
-          ? new Date(tQ.data.start_date).toISOString().slice(0, 16)
-          : "",
+        tQ.data.start_date ? toLocalDatetimeInput(tQ.data.start_date) : "",
       );
     }
   }, [tQ.data]);
