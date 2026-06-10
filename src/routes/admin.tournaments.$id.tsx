@@ -18,6 +18,12 @@ export const Route = createFileRoute("/admin/tournaments/$id")({
 
 type HoleRow = { id: string; hole_number: number; par: number };
 
+function toLocalDatetimeInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function EditTournament() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -67,9 +73,7 @@ function EditTournament() {
       setMulligansEnabled(tQ.data.mulligans_enabled ?? true);
       setStartFormat((tQ.data.start_format as "tee_time" | "shotgun") ?? "tee_time");
       setStartDate(
-        tQ.data.start_date
-          ? new Date(tQ.data.start_date).toISOString().slice(0, 16)
-          : "",
+        tQ.data.start_date ? toLocalDatetimeInput(tQ.data.start_date) : "",
       );
     }
   }, [tQ.data]);
