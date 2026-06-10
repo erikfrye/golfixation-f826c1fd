@@ -299,3 +299,256 @@ function AddPlayerInput({ onAdd }: { onAdd: (name: string) => void }) {
     </form>
   );
 }
+
+type ParsedRow = {
+  team_name: string;
+  captain_email: string;
+  start_hole: number;
+  player_name: string;
+  mulligans: number;
+};
+
+function parseCsv(text: string): { rows: string[][]; error?: string } {
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { cur.push(field); field = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        cur.push(field); field = "";
+        if (cur.some((v) => v.trim() !== "")) rows.push(cur);
+        cur = [];
+      } else field += c;
+    }
+  }
+  if (field !== "" || cur.length > 0) {
+    cur.push(field);
+    if (cur.some((v) => v.trim() !== "")) rows.push(cur);
+  }
+  return { rows };
+}
+
+const TEMPLATE_CSV =
+  "team_name,captain_email,start_hole,player_name,mulligans\n" +
+  "Eagles,captain1@example.com,1,John Doe,2\n" +
+  "Eagles,captain1@example.com,1,Jane Doe,2\n" +
+  "Birdies,captain2@example.com,5,Bob Smith,1\n" +
+  "Birdies,captain2@example.com,5,Alice Brown,1\n";
+
+function BulkImport({
+  tournamentId,
+  numHoles,
+  mulligansEnabled,
+  open,
+  onToggle,
+  onDone,
+}: {
+  tournamentId: string;
+  numHoles: number;
+  mulligansEnabled: boolean;
+  open: boolean;
+  onToggle: () => void;
+  onDone: () => void;
+}) {
+  const [text, setText] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const downloadTemplate = () => {
+    const blob = new Blob([TEMPLATE_CSV], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "teams-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const onFile = async (file: File) => {
+    const t = await file.text();
+    setText(t);
+  };
+
+  const parseRows = (): { ok: ParsedRow[]; error?: string } => {
+    const { rows } = parseCsv(text);
+    if (rows.length < 2) return { ok: [], error: "CSV must have a header row and at least one data row." };
+    const header = rows[0].map((h) => h.trim().toLowerCase());
+    const idx = {
+      team_name: header.indexOf("team_name"),
+      captain_email: header.indexOf("captain_email"),
+      start_hole: header.indexOf("start_hole"),
+      player_name: header.indexOf("player_name"),
+      mulligans: header.indexOf("mulligans"),
+    };
+    if (idx.team_name < 0 || idx.captain_email < 0 || idx.player_name < 0)
+      return { ok: [], error: "Missing required columns: team_name, captain_email, player_name." };
+    const out: ParsedRow[] = [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      const team_name = (r[idx.team_name] ?? "").trim();
+      const captain_email = (r[idx.captain_email] ?? "").trim().toLowerCase();
+      const player_name = (r[idx.player_name] ?? "").trim();
+      if (!team_name && !captain_email && !player_name) continue;
+      if (!team_name || !captain_email || !player_name)
+        return { ok: [], error: `Row ${i + 1}: team_name, captain_email and player_name are required.` };
+      const sh = idx.start_hole >= 0 ? parseInt((r[idx.start_hole] ?? "1").trim(), 10) : 1;
+      const start_hole = Math.max(1, Math.min(numHoles, Number.isFinite(sh) ? sh : 1));
+      const mu = idx.mulligans >= 0 ? parseInt((r[idx.mulligans] ?? "0").trim(), 10) : 0;
+      const mulligans = Number.isFinite(mu) ? Math.max(0, mu) : 0;
+      out.push({ team_name, captain_email, start_hole, player_name, mulligans });
+    }
+    return { ok: out };
+  };
+
+  const preview = text.trim() ? parseRows() : null;
+
+  const runImport = async () => {
+    if (!preview || preview.error || preview.ok.length === 0) return;
+    if (!confirm(`Import ${preview.ok.length} player row(s)? Existing teams with the same name will get new players appended.`)) return;
+    setBusy(true);
+    setStatus(null);
+    try {
+      // Group by team
+      const teamsMap = new Map<string, { name: string; captain_email: string; start_hole: number; players: { name: string; mulligans: number }[] }>();
+      for (const row of preview.ok) {
+        const key = row.team_name.toLowerCase();
+        let t = teamsMap.get(key);
+        if (!t) {
+          t = { name: row.team_name, captain_email: row.captain_email, start_hole: row.start_hole, players: [] };
+          teamsMap.set(key, t);
+        }
+        t.players.push({ name: row.player_name, mulligans: row.mulligans });
+      }
+
+      // Fetch existing teams to dedupe by name (case-insensitive)
+      const { data: existing, error: exErr } = await supabase
+        .from("teams")
+        .select("id, name")
+        .eq("tournament_id", tournamentId);
+      if (exErr) throw exErr;
+      const existingByName = new Map<string, string>(
+        (existing ?? []).map((t) => [t.name.toLowerCase(), t.id]),
+      );
+
+      let teamsCreated = 0;
+      let playersCreated = 0;
+      for (const t of teamsMap.values()) {
+        let teamId = existingByName.get(t.name.toLowerCase());
+        if (!teamId) {
+          const { data: ins, error: tErr } = await supabase
+            .from("teams")
+            .insert({
+              tournament_id: tournamentId,
+              name: t.name,
+              captain_email: t.captain_email,
+              start_hole: t.start_hole,
+            })
+            .select("id")
+            .single();
+          if (tErr) throw tErr;
+          teamId = ins.id;
+          teamsCreated++;
+        }
+        const playerRows = t.players.map((p) => ({
+          tournament_id: tournamentId,
+          team_id: teamId!,
+          name: p.name,
+          mulligans_total: mulligansEnabled ? p.mulligans : 0,
+        }));
+        if (playerRows.length > 0) {
+          const { error: pErr } = await supabase.from("team_players").insert(playerRows);
+          if (pErr) throw pErr;
+          playersCreated += playerRows.length;
+        }
+      }
+
+      setStatus(`Imported ${teamsCreated} new team(s) and ${playersCreated} player(s).`);
+      setText("");
+      onDone();
+    } catch (err) {
+      setStatus(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mb-6 rounded-lg border border-border bg-card">
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-foreground"
+      >
+        <span className="inline-flex items-center gap-2">
+          <Upload className="h-4 w-4" /> Bulk import (CSV)
+        </span>
+        <span className="text-xs text-muted-foreground">{open ? "Hide" : "Show"}</span>
+      </button>
+      {open && (
+        <div className="space-y-3 border-t border-border p-4">
+          <p className="text-xs text-muted-foreground">
+            One row per player. Columns: <code>team_name, captain_email, start_hole, player_name, mulligans</code>. Players sharing a team_name are grouped into the same team (start_hole and captain_email taken from the first row).
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={downloadTemplate}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-accent"
+            >
+              <Download className="h-3.5 w-3.5" /> Download template
+            </button>
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-accent">
+              <Upload className="h-3.5 w-3.5" /> Upload .csv
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={8}
+            placeholder="Paste CSV here or upload a file…"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
+          />
+          {preview && preview.error && (
+            <p className="text-xs text-destructive">{preview.error}</p>
+          )}
+          {preview && !preview.error && preview.ok.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Ready to import: {new Set(preview.ok.map((r) => r.team_name.toLowerCase())).size} team(s),{" "}
+              {preview.ok.length} player(s).
+            </p>
+          )}
+          {status && <p className="text-xs text-muted-foreground">{status}</p>}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={runImport}
+              disabled={busy || !preview || !!preview?.error || preview.ok.length === 0}
+              className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            >
+              {busy ? "Importing…" : "Import"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
