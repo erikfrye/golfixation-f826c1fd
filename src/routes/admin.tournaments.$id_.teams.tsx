@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, Plus, Trash2, UserPlus, Pencil } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, UserPlus, Pencil, Upload, Download } from "lucide-react";
 import { adminListTeams, adminGetTournament } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/tournaments/$id_/teams")({
@@ -54,6 +54,7 @@ function ManageTeams() {
 
   const [newTeamName, setNewTeamName] = useState("");
   const [newCaptainEmail, setNewCaptainEmail] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["admin", "teams", id] });
@@ -147,6 +148,15 @@ function ManageTeams() {
           </button>
         </div>
       </form>
+
+      <BulkImport
+        tournamentId={id}
+        numHoles={numHoles}
+        mulligansEnabled={mulligansEnabled}
+        open={importOpen}
+        onToggle={() => setImportOpen((v) => !v)}
+        onDone={refresh}
+      />
 
       {teamsQ.isLoading ? (
         <div className="h-24 animate-pulse rounded-lg bg-muted" />
