@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, ChevronLeft, ChevronRight, Trophy } from "lucide-react";
 import { AboutButton } from "@/components/about-dialog";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export const Route = createFileRoute("/tournaments/past")({
   head: () => ({
@@ -40,7 +41,10 @@ function PastTournamentsPage() {
             <Flag className="h-5 w-5 text-primary" />
             <span className="text-sm font-semibold text-foreground">Golfixation</span>
           </Link>
-          <AboutButton />
+          <div className="flex items-center gap-1">
+            <AboutButton />
+            <ThemeSwitcher />
+          </div>
         </div>
       </header>
 
