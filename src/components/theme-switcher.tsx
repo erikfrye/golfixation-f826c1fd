@@ -27,7 +27,7 @@ export function getInitialTheme(): Mode {
 const MODES: { value: Mode; label: string; icon: React.ReactNode }[] = [
   { value: "light", label: "Light", icon: <Sun className="h-4 w-4" /> },
   { value: "dark", label: "Dark", icon: <Moon className="h-4 w-4" /> },
-  { value: "hc", label: "Outdoor high-contrast", icon: <Eye className="h-4 w-4" /> },
+  { value: "hc", label: "High-contrast", icon: <Eye className="h-4 w-4" /> },
 ];
 
 export function ThemeSwitcher() {
@@ -65,11 +65,7 @@ export function ThemeSwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         {MODES.map((m) => (
-          <DropdownMenuItem
-            key={m.value}
-            className="cursor-pointer"
-            onClick={() => select(m.value)}
-          >
+          <DropdownMenuItem key={m.value} className="cursor-pointer" onClick={() => select(m.value)}>
             <span className="mr-2">{m.icon}</span>
             <span className="flex-1">{m.label}</span>
             {mode === m.value && <Check className="h-4 w-4" />}
