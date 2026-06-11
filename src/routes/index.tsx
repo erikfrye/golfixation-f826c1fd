@@ -84,6 +84,7 @@ function Index() {
                 Sign out
               </button>
               <AboutButton />
+              <ThemeSwitcher />
             </div>
           ) : (
             <div className="flex items-center gap-1">
