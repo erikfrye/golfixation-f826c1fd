@@ -2,9 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Flag, Trophy, ChevronRight, LogOut } from "lucide-react";
+import { Flag, Trophy, ChevronRight } from "lucide-react";
 import { AboutButton } from "@/components/about-dialog";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { UserMenu } from "@/components/user-menu";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -68,21 +69,8 @@ function Index() {
             <h1 className="text-sm font-semibold text-foreground">Golfixation</h1>
           </div>
           {email ? (
-            <div className="flex items-center gap-3">
-              <Link
-                to="/captain"
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                {email}
-              </Link>
-              <button
-                onClick={signOut}
-                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label="Sign out"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                Sign out
-              </button>
+            <div className="flex items-center gap-1">
+              <UserMenu email={email} onSignOut={signOut} />
               <AboutButton />
               <ThemeSwitcher />
             </div>

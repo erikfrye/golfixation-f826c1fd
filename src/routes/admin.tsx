@@ -2,9 +2,10 @@ import { createFileRoute, Outlet, Link, useNavigate } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Flag, LogOut } from "lucide-react";
+import { Flag } from "lucide-react";
 import { AboutButton } from "@/components/about-dialog";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { UserMenu } from "@/components/user-menu";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -82,14 +83,9 @@ function AdminLayout() {
             <span className="text-sm font-semibold text-foreground">Golfixation Admin</span>
           </Link>
           <div className="flex items-center gap-1">
-          <button
-            onClick={signOut}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <LogOut className="h-3.5 w-3.5" /> Sign out
-          </button>
-          <AboutButton />
-          <ThemeSwitcher />
+            <UserMenu onSignOut={signOut} />
+            <AboutButton />
+            <ThemeSwitcher />
           </div>
         </div>
       </header>
