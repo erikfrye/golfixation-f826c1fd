@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { Moon, Sun, SunMedium } from "lucide-react";
+import { Moon, Sun, Eye, Check } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type Mode = "light" | "dark" | "hc";
 const KEY = "gx-theme";
@@ -18,6 +24,12 @@ export function getInitialTheme(): Mode {
   return "light";
 }
 
+const MODES: { value: Mode; label: string; icon: React.ReactNode }[] = [
+  { value: "light", label: "Light", icon: <Sun className="h-4 w-4" /> },
+  { value: "dark", label: "Dark", icon: <Moon className="h-4 w-4" /> },
+  { value: "hc", label: "Outdoor high-contrast", icon: <Eye className="h-4 w-4" /> },
+];
+
 export function ThemeSwitcher() {
   const [mode, setMode] = useState<Mode>("light");
 
@@ -27,7 +39,7 @@ export function ThemeSwitcher() {
     apply(m);
   }, []);
 
-  const next = (m: Mode) => {
+  const select = (m: Mode) => {
     setMode(m);
     apply(m);
     try {
@@ -37,24 +49,33 @@ export function ThemeSwitcher() {
     }
   };
 
-  const cycle = () => {
-    const order: Mode[] = ["light", "dark", "hc"];
-    next(order[(order.indexOf(mode) + 1) % order.length]);
-  };
-
-  const label =
-    mode === "light" ? "Light mode" : mode === "dark" ? "Dark mode" : "Outdoor high-contrast mode";
-  const Icon = mode === "light" ? Sun : mode === "dark" ? Moon : SunMedium;
+  const current = MODES.find((m) => m.value === mode)!;
 
   return (
-    <button
-      type="button"
-      onClick={cycle}
-      aria-label={`Theme: ${label}. Click to switch.`}
-      title={`Theme: ${label}`}
-      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-    >
-      <Icon className="h-4 w-4" />
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Theme"
+          title="Theme"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          {current.icon}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        {MODES.map((m) => (
+          <DropdownMenuItem
+            key={m.value}
+            className="cursor-pointer"
+            onClick={() => select(m.value)}
+          >
+            <span className="mr-2">{m.icon}</span>
+            <span className="flex-1">{m.label}</span>
+            {mode === m.value && <Check className="h-4 w-4" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
