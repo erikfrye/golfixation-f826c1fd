@@ -133,6 +133,37 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+/*
+ * Outdoor high-contrast mode — designed for sun-readability.
+ * Near-pure white background, near-black foreground, bold borders,
+ * and a deeply saturated primary so CTAs stay legible in glare.
+ */
+.hc {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.12 0.02 240);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.12 0.02 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.12 0.02 240);
+  --primary: oklch(0.36 0.16 150);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0.02 95);
+  --secondary-foreground: oklch(0.12 0.02 240);
+  --muted: oklch(0.96 0.01 95);
+  --muted-foreground: oklch(0.22 0.03 240);
+  --accent: oklch(0.82 0.18 85);
+  --accent-foreground: oklch(0.12 0.02 240);
+  --destructive: oklch(0.46 0.26 27);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.25 0.04 240);
+  --input: oklch(0.25 0.04 240);
+  --ring: oklch(0.36 0.16 150);
+}
+
+.hc body {
+  font-weight: 500;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
