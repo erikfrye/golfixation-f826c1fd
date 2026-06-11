@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, LogOut } from "lucide-react";
 import { AboutButton } from "@/components/about-dialog";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -88,6 +89,7 @@ function AdminLayout() {
             <LogOut className="h-3.5 w-3.5" /> Sign out
           </button>
           <AboutButton />
+          <ThemeSwitcher />
           </div>
         </div>
       </header>

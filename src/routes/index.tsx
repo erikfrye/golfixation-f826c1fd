@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Flag, Trophy, ChevronRight, LogOut } from "lucide-react";
 import { AboutButton } from "@/components/about-dialog";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -83,6 +84,7 @@ function Index() {
                 Sign out
               </button>
               <AboutButton />
+              <ThemeSwitcher />
             </div>
           ) : (
             <div className="flex items-center gap-1">
@@ -93,6 +95,7 @@ function Index() {
                 Login
               </Link>
               <AboutButton />
+              <ThemeSwitcher />
             </div>
           )}
         </div>

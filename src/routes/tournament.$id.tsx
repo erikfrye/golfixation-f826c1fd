@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Flag, ChevronLeft, ChevronDown, ChevronRight, X, Pencil, Trophy, LogOut } from "lucide-react";
 import { LiveIndicator } from "@/components/live-indicator";
 import { AboutButton } from "@/components/about-dialog";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
 import { InstallPrompt } from "@/components/install-prompt";
 
@@ -273,6 +274,7 @@ function TournamentPage() {
                 Sign out
               </button>
               <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
+              <ThemeSwitcher />
             </div>
           ) : (
             <div className="flex items-center gap-1">
@@ -283,6 +285,7 @@ function TournamentPage() {
                 Login
               </Link>
               <AboutButton tournamentAbout={tournament?.about_content} tournamentName={tournament?.name} />
+              <ThemeSwitcher />
             </div>
           )}
         </div>
