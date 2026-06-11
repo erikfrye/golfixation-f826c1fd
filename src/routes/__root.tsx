@@ -112,6 +112,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var m=localStorage.getItem('gx-theme');if(m==='dark'){document.documentElement.classList.add('dark');}else if(m==='hc'){document.documentElement.classList.add('hc');}}catch(e){}})();",
+          }}
+        />
       </head>
       <body>
         {children}
