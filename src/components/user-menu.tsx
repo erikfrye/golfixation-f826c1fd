@@ -1,4 +1,7 @@
-import { LogOut, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LogOut, User, Shield, Users } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +17,36 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ email, onSignOut }: UserMenuProps) {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isCaptain, setIsCaptain] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) {
+        if (!cancelled) {
+          setIsAdmin(false);
+          setIsCaptain(false);
+        }
+        return;
+      }
+      const [adminRes, captainRes] = await Promise.all([
+        supabase.from("admins").select("id").eq("id", user.id).maybeSingle(),
+        user.email
+          ? supabase.from("teams").select("id").ilike("captain_email", user.email).limit(1)
+          : Promise.resolve({ data: [] as { id: string }[] }),
+      ]);
+      if (cancelled) return;
+      setIsAdmin(!!adminRes.data);
+      setIsCaptain(!!(captainRes.data && captainRes.data.length > 0));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [email]);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -34,6 +67,23 @@ export function UserMenu({ email, onSignOut }: UserMenuProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {isCaptain && (
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link to="/captain">
+              <Users className="mr-2 h-4 w-4" />
+              Captain View
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {isAdmin && (
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link to="/admin">
+              <Shield className="mr-2 h-4 w-4" />
+              Admin View
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {(isCaptain || isAdmin) && <DropdownMenuSeparator />}
         <DropdownMenuItem onClick={onSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           Sign out
