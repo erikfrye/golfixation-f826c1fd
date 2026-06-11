@@ -2,9 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Flag, Trophy, ChevronRight, LogOut } from "lucide-react";
+import { Flag, Trophy, ChevronRight } from "lucide-react";
 import { AboutButton } from "@/components/about-dialog";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { UserMenu } from "@/components/user-menu";
 
 export const Route = createFileRoute("/")({
   component: Index,
