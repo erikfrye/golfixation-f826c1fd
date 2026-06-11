@@ -69,21 +69,8 @@ function Index() {
             <h1 className="text-sm font-semibold text-foreground">Golfixation</h1>
           </div>
           {email ? (
-            <div className="flex items-center gap-3">
-              <Link
-                to="/captain"
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                {email}
-              </Link>
-              <button
-                onClick={signOut}
-                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label="Sign out"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                Sign out
-              </button>
+            <div className="flex items-center gap-1">
+              <UserMenu email={email} onSignOut={signOut} />
               <AboutButton />
               <ThemeSwitcher />
             </div>
