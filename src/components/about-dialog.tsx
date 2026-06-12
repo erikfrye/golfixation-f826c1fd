@@ -18,11 +18,7 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
   const { data: appAbout } = useQuery({
     queryKey: ["app_settings", "about"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("about_content")
-        .eq("id", "app")
-        .maybeSingle();
+      const { data, error } = await supabase.from("app_settings").select("about_content").eq("id", "app").maybeSingle();
       if (error) throw error;
       return data?.about_content ?? "";
     },
@@ -30,7 +26,7 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
   });
 
   const override = tournamentAbout?.trim();
-  const content = override && override.length > 0 ? override : appAbout ?? "";
+  const content = override && override.length > 0 ? override : (appAbout ?? "");
   const title = override ? tournamentName || "About this tournament" : "About Golfixation";
 
   useEffect(() => {
@@ -49,57 +45,59 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
         aria-label="About"
         onClick={() => setOpen(true)}
         className={
-          "inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground " +
+          "inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground " +
           (className ?? "")
         }
       >
         <Info className="h-5 w-5" />
       </button>
-      {mounted && typeof document !== "undefined" && createPortal(
-        <div
-          className={`fixed inset-0 z-40 flex items-center justify-center bg-foreground/40 p-4 ${
-            leaving ? "animate-backdrop-out" : "animate-backdrop-in"
-          }`}
-          onClick={() => close()}
-        >
+      {mounted &&
+        typeof document !== "undefined" &&
+        createPortal(
           <div
-            className={`w-full max-w-sm rounded-2xl bg-card p-5 shadow-lg ${
-              leaving ? "animate-modal-out" : "animate-modal-in"
+            className={`fixed inset-0 z-40 flex items-center justify-center bg-foreground/40 p-4 ${
+              leaving ? "animate-backdrop-out" : "animate-backdrop-in"
             }`}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
+            onClick={() => close()}
           >
-            <div className="flex items-start justify-between">
-              <div className="font-mono text-2xl font-bold text-foreground">{title}</div>
-              <button
-                type="button"
-                onClick={() => close()}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
-                aria-label="Close"
-              >
-                <X className="h-4 w-4" />
-              </button>
+            <div
+              className={`w-full max-w-sm rounded-2xl bg-card p-5 shadow-lg ${
+                leaving ? "animate-modal-out" : "animate-modal-in"
+              }`}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="flex items-start justify-between">
+                <div className="font-mono text-2xl font-bold text-foreground">{title}</div>
+                <button
+                  type="button"
+                  onClick={() => close()}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="mt-4 whitespace-pre-wrap text-sm text-foreground">
+                {content || "No information has been added yet."}
+              </div>
+              <div className="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">
+                Built with{" "}
+                <a
+                  href="https://lovable.dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary hover:underline"
+                >
+                  Lovable
+                </a>
+                .
+              </div>
             </div>
-            <div className="mt-4 whitespace-pre-wrap text-sm text-foreground">
-              {content || "No information has been added yet."}
-            </div>
-            <div className="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">
-              Built with{" "}
-              <a
-                href="https://lovable.dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-primary hover:underline"
-              >
-                Lovable
-              </a>
-              .
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
