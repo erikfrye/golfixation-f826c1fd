@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LogOut, User, Shield, Users } from "lucide-react";
+import { LogOut, User, ShieldUser, UserPen } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -61,16 +61,14 @@ export function UserMenu({ email, onSignOut }: UserMenuProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium text-foreground">Account</p>
-            {email && (
-              <p className="text-xs text-muted-foreground truncate">{email}</p>
-            )}
+            {email && <p className="text-xs text-muted-foreground truncate">{email}</p>}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {isCaptain && (
           <DropdownMenuItem asChild className="cursor-pointer">
             <Link to="/captain">
-              <Users className="mr-2 h-4 w-4" />
+              <UserPen className="mr-2 h-4 w-4" />
               Captain View
             </Link>
           </DropdownMenuItem>
@@ -78,7 +76,7 @@ export function UserMenu({ email, onSignOut }: UserMenuProps) {
         {isAdmin && (
           <DropdownMenuItem asChild className="cursor-pointer">
             <Link to="/admin">
-              <Shield className="mr-2 h-4 w-4" />
+              <ShieldUser className="mr-2 h-4 w-4" />
               Admin View
             </Link>
           </DropdownMenuItem>
