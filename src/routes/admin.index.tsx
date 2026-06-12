@@ -1,15 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, ChevronRight } from "lucide-react";
-import { adminListTournaments } from "@/lib/admin.functions";
+import { Plus, ChevronRight, Copy } from "lucide-react";
+import { adminListTournaments, adminCloneTournament } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
 function AdminDashboard() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "tournaments"],
     queryFn: () => adminListTournaments(),
@@ -31,6 +33,25 @@ function AdminDashboard() {
   const [about, setAbout] = useState("");
   const [savingAbout, setSavingAbout] = useState(false);
   const [aboutMsg, setAboutMsg] = useState<string | null>(null);
+  const [cloningId, setCloningId] = useState<string | null>(null);
+
+  const clone = async (id: string, currentName: string) => {
+    const name = window.prompt(
+      "Name the new tournament (holes, pars, handicaps & settings will be copied):",
+      `${currentName} (copy)`,
+    );
+    if (!name || !name.trim()) return;
+    setCloningId(id);
+    try {
+      const res = await adminCloneTournament({ data: { id, name: name.trim() } });
+      await qc.invalidateQueries({ queryKey: ["admin", "tournaments"] });
+      navigate({ to: "/admin/tournaments/$id", params: { id: res.id } });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Clone failed");
+    } finally {
+      setCloningId(null);
+    }
+  };
 
   useEffect(() => {
     if (aboutQ.data !== undefined) setAbout(aboutQ.data);
@@ -92,12 +113,13 @@ function AdminDashboard() {
         <ul className="space-y-2">
           {data.map((t) => (
             <li key={t.id}>
-              <Link
-                to="/admin/tournaments/$id"
-                params={{ id: t.id }}
-                className="flex items-center justify-between rounded-lg border border-border bg-card p-4 hover:border-primary hover:bg-accent/30"
-              >
-                <div>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-4 hover:border-primary hover:bg-accent/30">
+                <Link
+                  to="/admin/tournaments/$id"
+                  params={{ id: t.id }}
+                  className="flex flex-1 items-center justify-between"
+                >
+                  <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-foreground">{t.name}</h3>
                     <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -107,9 +129,20 @@ function AdminDashboard() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {t.num_holes} holes · Code <span className="font-mono">{t.override_code}</span>
                   </p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </Link>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => clone(t.id, t.name)}
+                  disabled={cloningId === t.id}
+                  title="Clone tournament"
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-60"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {cloningId === t.id ? "Cloning…" : "Clone"}
+                </button>
+              </div>
             </li>
           ))}
         </ul>
