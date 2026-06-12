@@ -105,3 +105,67 @@ export const adminGetScoreAudit = createServerFn({ method: "POST" })
       players: playersRes.data ?? [],
     };
   });
+
+/* Admin: clone a tournament (settings + holes as template) */
+function genCode(len = 6) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+export const adminCloneTournament = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid(), name: z.string().min(1).max(200) }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const admin = await assertAdmin(context.userId);
+    const { data: src, error: srcErr } = await admin
+      .from("tournaments")
+      .select(
+        "num_holes, format, tee_shot_minimum, about_content, mulligans_enabled, start_format",
+      )
+      .eq("id", data.id)
+      .maybeSingle();
+    if (srcErr) throw new Error(srcErr.message);
+    if (!src) throw new Error("Source tournament not found");
+
+    const { data: srcHoles, error: hErr } = await admin
+      .from("holes")
+      .select("hole_number, par, handicap")
+      .eq("tournament_id", data.id)
+      .order("hole_number");
+    if (hErr) throw new Error(hErr.message);
+
+    const { data: newT, error: insErr } = await admin
+      .from("tournaments")
+      .insert({
+        name: data.name,
+        status: "draft",
+        num_holes: src.num_holes,
+        format: src.format,
+        tee_shot_minimum: src.tee_shot_minimum,
+        about_content: src.about_content,
+        mulligans_enabled: src.mulligans_enabled,
+        start_format: src.start_format,
+        override_code: genCode(),
+        created_by: context.userId,
+      })
+      .select("id")
+      .single();
+    if (insErr) throw new Error(insErr.message);
+
+    if (srcHoles && srcHoles.length > 0) {
+      const rows = srcHoles.map((h) => ({
+        tournament_id: newT.id,
+        hole_number: h.hole_number,
+        par: h.par,
+        handicap: h.handicap,
+      }));
+      const { error: hInsErr } = await admin.from("holes").insert(rows);
+      if (hInsErr) throw new Error(hInsErr.message);
+    }
+
+    return { id: newT.id };
+  });
