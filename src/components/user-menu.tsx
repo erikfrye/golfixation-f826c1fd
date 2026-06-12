@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { LogOut, User, ShieldUser, UserPen } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { listMyCaptainTeams } from "@/lib/admin.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,13 +35,11 @@ export function UserMenu({ email, onSignOut }: UserMenuProps) {
       }
       const [adminRes, captainRes] = await Promise.all([
         supabase.from("admins").select("id").eq("id", user.id).maybeSingle(),
-        user.email
-          ? supabase.from("teams").select("id").ilike("captain_email", user.email).limit(1)
-          : Promise.resolve({ data: [] as { id: string }[] }),
+        listMyCaptainTeams().catch(() => [] as { id: string }[]),
       ]);
       if (cancelled) return;
       setIsAdmin(!!adminRes.data);
-      setIsCaptain(!!(captainRes.data && captainRes.data.length > 0));
+      setIsCaptain(Array.isArray(captainRes) && captainRes.length > 0);
     })();
     return () => {
       cancelled = true;
