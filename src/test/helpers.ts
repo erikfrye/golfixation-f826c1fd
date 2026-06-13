@@ -71,3 +71,8 @@ export function mockSupabaseAdmin() {
 }
 
 export type MockAdmin = ReturnType<typeof mockSupabaseAdmin>;
+
+/** Cast a mock admin to the production AdminLike shape for handler calls. */
+export function asAdmin<T>(m: MockAdmin): T {
+  return m as unknown as T;
+}
