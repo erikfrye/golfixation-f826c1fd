@@ -145,7 +145,7 @@ export async function adminCloneTournamentHandler(
   if (insErr) throw new Error(insErr.message);
 
   if (srcHoles && srcHoles.length > 0) {
-    const rows = srcHoles.map((h: { hole_number: number; par: number; handicap: number }) => ({
+    const rows = srcHoles.map((h) => ({
       tournament_id: newT.id,
       hole_number: h.hole_number,
       par: h.par,
