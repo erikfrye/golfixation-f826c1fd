@@ -22,7 +22,7 @@ describe("redeemOverrideCodeHandler", () => {
     const admin = mockSupabaseAdmin();
     admin.queue("tournaments", { data: null, error: null });
     await expect(
-      redeemOverrideCodeHandler(admin, { code: "abcd", email: "a@b.co" }),
+      redeemOverrideCodeHandler(admin as any, { code: "abcd", email: "a@b.co" }),
     ).rejects.toThrow("Invalid override code");
   });
 
@@ -31,7 +31,7 @@ describe("redeemOverrideCodeHandler", () => {
     admin.queue("tournaments", { data: { id: "t1", name: "Cup", status: "draft" }, error: null });
     admin.queue("teams", { data: null, error: null });
     await expect(
-      redeemOverrideCodeHandler(admin, { code: "abcd", email: "a@b.co" }),
+      redeemOverrideCodeHandler(admin as any, { code: "abcd", email: "a@b.co" }),
     ).rejects.toThrow(/not registered as a captain/);
   });
 
@@ -39,7 +39,7 @@ describe("redeemOverrideCodeHandler", () => {
     const admin = mockSupabaseAdmin();
     admin.queue("tournaments", { data: { id: "t1", name: "Cup", status: "draft" }, error: null });
     admin.queue("teams", { data: { id: "team1", name: "Birdies" }, error: null });
-    const res = await redeemOverrideCodeHandler(admin, {
+    const res = await redeemOverrideCodeHandler(admin as any, {
       code: " abcd ",
       email: " Foo@BAR.com ",
     });
@@ -64,7 +64,7 @@ describe("redeemOverrideCodeHandler", () => {
       error: { message: "gen fail" },
     } as never);
     await expect(
-      redeemOverrideCodeHandler(admin, { code: "abcd", email: "a@b.co" }),
+      redeemOverrideCodeHandler(admin as any, { code: "abcd", email: "a@b.co" }),
     ).rejects.toThrow("gen fail");
   });
 });
