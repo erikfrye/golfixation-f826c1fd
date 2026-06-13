@@ -1,34 +1,114 @@
-# Setup bug fixes
+## Goal
+Establish a first test safety net covering: (1) test tooling, (2) pure-logic unit tests for `offline-queue` + `genCode`, (3) server-function contract tests with a mocked Supabase admin client.
 
-## Bug 1 — Mulligans field not saving (admin Teams page)
+## 1. Tooling
 
-File: `src/routes/admin.tournaments.$id_.teams.tsx`
+Install dev deps:
+- `vitest`, `@vitest/coverage-v8`
+- `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`
+- `jsdom`, `happy-dom` (use `jsdom`)
 
-The mulligans `onBlur` calls `updatePlayer(p.id, { mulligans_total: n })`, but the function swallows any Supabase error silently, so RLS rejections / value coercion issues vanish without a trace.
+Add to `package.json` scripts:
+- `"test": "vitest run"`
+- `"test:watch": "vitest"`
+- `"test:coverage": "vitest run --coverage"`
 
-- Make `updatePlayer` (and the other admin mutations on this page) check `error` from Supabase and `alert(error.message)` on failure, matching the style used elsewhere in the file.
-- Coerce the input safely: use `Number.isFinite(parsed) ? Math.max(0, parsed) : 0` so an empty/garbled blur can't smuggle in `NaN` or a string.
-- Switch the mulligans input from uncontrolled `defaultValue` + closure-captured `p.mulligans_total` to a `key={p.mulligans_total}` + `defaultValue` pattern so a successful save visibly refreshes the value, confirming the round-trip.
+Create `vitest.config.ts` with:
+- `environment: "jsdom"`
+- `globals: true`
+- `setupFiles: ["./src/test/setup.ts"]`
+- Path alias `@` → `./src` (mirroring tsconfig)
+- `include: ["src/**/*.{test,spec}.{ts,tsx}"]`
 
-This both fixes silent failures (so we see why Erik's row isn't updating) and makes a successful update visually reflect on the row.
+Create `src/test/setup.ts`:
+- imports `@testing-library/jest-dom`
+- stubs `localStorage` (jsdom provides it, no-op)
+- silences `navigator.onLine` toggling helper
 
-## Bug 2 — Auto-select mulligans value on focus
+Create `src/test/helpers.ts`:
+- `mockSupabaseAdmin()` — factory returning a chainable jest-style mock for `.from().select()/.insert()/.eq()/.maybeSingle()/.order()/.ilike()/.upsert()` plus `.auth.admin.generateLink()`. Each method returns `this` until a terminal awaited call resolves with a configured `{ data, error }`.
+- `mockRequireSupabaseAuthContext({ userId, email })` — used by handler invocations.
 
-File: `src/routes/admin.tournaments.$id_.teams.tsx`
+Update `tsconfig.json` `types` to include `vitest/globals` and `@testing-library/jest-dom`.
 
-Add `onFocus={(e) => e.target.select()}` to the mulligans `<input>` (same pattern already used on the start_hole input and the par editor). Typing a number now overwrites the existing value.
+## 2. Pure-logic unit tests
 
-## Bug 3 — Advance focus to next hole in par editor
+### `src/lib/__tests__/offline-queue.test.ts`
+Covers `TeamQueue` via `getQueueForTeam`. Mock `@/integrations/supabase/client` so `supabase.from().upsert()` and `supabase.auth.getSession()` are controllable. Use fake timers.
+- enqueue: new item is created with `status=pending`, persisted to `localStorage`, listener fires.
+- enqueue dedupe: re-enqueueing same `team_id:hole_number` replaces payload, resets attempts, keeps original `queuedAt`.
+- removeByHole: removes matching item and persists.
+- flush success: when online + session present, upsert called with payload, item removed, `lastSyncedAt` updated.
+- flush failure with retry/backoff: upsert returns error → item stays, `attempts` increments, `nextAttemptAt` follows `BACKOFFS` sequence (2s, 5s, 15s, 30s, 30s).
+- offline guard: `navigator.onLine=false` → no upsert attempted.
+- no-session guard: `getSession` returns null → no upsert attempted.
+- retryAll: resets failed/scheduled items to pending immediately.
+- subscribe/snapshot: notifies on changes; cached snapshot identity changes only after mutation.
 
-File: `src/routes/admin.tournaments.$id.tsx` (Hole pars grid, ~line 252)
+### `src/lib/__tests__/gen-code.test.ts`
+`genCode` isn't exported. Re-export it from `admin.functions.ts` as `export function genCode` so tests can import it without invoking server-fn machinery.
+- default length 6.
+- only uses allowed alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no I/O/0/1).
+- 10k samples have reasonable distribution (no duplicates > expected).
 
-After a par value is committed for hole N, move keyboard focus to hole N+1's input so the admin can tab/type straight through the course.
+## 3. Server-function contract tests
 
-- Convert the par inputs to use `ref`s stored in an array keyed by hole index.
-- On `Enter` or `blur` (whichever finishes editing), focus the next input via `refs[idx + 1]?.focus()` and let the existing `onFocus` `select()` handler pre-select its value.
-- Wrap behavior: stop at the last hole (no wrap to hole 1) to avoid surprising loops.
+Server functions built with `createServerFn` aren't trivially invokable in unit tests (they wrap handlers with middleware). Strategy: extract each handler body into a plain async function (e.g. `cloneTournamentHandler({ admin, userId, data })`) and have the `createServerFn` `.handler()` call that function. This lets tests exercise pure handler logic with a mocked admin client and synthesized context.
 
-## Out of scope
+Refactor `src/lib/admin.functions.ts` and `src/lib/captain.functions.ts`:
+- Pull each handler body into an exported async function.
+- Keep `assertAdmin` exported.
+- Keep `getAdminClient` as the default client provider; pass a client into handlers (dependency injection) for testability.
 
-- No DB / RLS changes — current admin policies on `team_players` already allow the update; we're only surfacing the error if one happens.
-- No changes to the captain scorecard flow.
+### `src/lib/__tests__/admin.functions.test.ts`
+Using `mockSupabaseAdmin()`:
+- `assertAdmin`: throws "Forbidden" when no row; passes when row exists.
+- `adminListTournaments`: throws if not admin; returns rows on success; surfaces query error.
+- `adminGetTournament`: validates `id` is uuid (zod); returns row.
+- `adminListTeams`: admin gate; returns ordered rows.
+- `listMyCaptainTeams`: returns `[]` when no email claim; uses `ilike` with lowercased email; bubbles error.
+- `adminGetScoreAudit`: admin gate; returns `{ entries, teams, players }`; rejects on any sub-query error.
+- `adminCloneTournament`:
+  - throws when source missing.
+  - clones settings: new row has `status="draft"`, `created_by=userId`, fresh `override_code` (6 chars from alphabet).
+  - copies all holes 1:1 to new tournament_id.
+  - skips hole insert when source has zero holes.
+  - propagates insert error.
+
+### `src/lib/__tests__/captain.functions.test.ts`
+- `redeemOverrideCode`:
+  - zod rejects bad email / short code.
+  - normalizes code (uppercase) and email (lowercase) before lookup.
+  - "Invalid override code" when tournament missing.
+  - "Email is not registered…" when team missing.
+  - success returns `{ tokenHash, email, tournamentName, teamName }`.
+  - `generateLink` error surfaces.
+
+## Out of scope (deferred to a later PR)
+
+- Component tests (`UserMenu`, `ThemeSwitcher`, login page)
+- Route smoke tests
+- Playwright e2e
+- pgTAP/RLS tests
+
+## Files to add
+
+- `vitest.config.ts`
+- `src/test/setup.ts`
+- `src/test/helpers.ts`
+- `src/lib/__tests__/offline-queue.test.ts`
+- `src/lib/__tests__/gen-code.test.ts`
+- `src/lib/__tests__/admin.functions.test.ts`
+- `src/lib/__tests__/captain.functions.test.ts`
+
+## Files to modify
+
+- `package.json` — scripts + devDeps
+- `tsconfig.json` — `types` additions; include `src/test` and test files
+- `src/lib/admin.functions.ts` — export `genCode`, extract handler bodies into testable functions
+- `src/lib/captain.functions.ts` — extract handler body into testable function
+
+## Verification
+
+- `bun run test` passes all suites.
+- `bun run build` still succeeds (no behavior changes; refactors keep server-fn exports intact).
