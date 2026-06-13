@@ -1,10 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/** Minimal shape of the admin client we use — keeps tests free of full typing. */
-export type AdminLike = Pick<SupabaseClient, "from" | "auth"> & Record<string, unknown>;
+/** Minimal structural shape of the admin client used in handlers — testable. */
+export type AdminLike = {
+  from: (table: string) => any;
+  auth: { admin: { generateLink: (args: any) => Promise<any> } };
+};
 
 export function getAdminClient(): AdminLike {
   return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
