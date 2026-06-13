@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 export const RedeemSchema = z.object({
   code: z.string().min(4).max(32),
@@ -8,10 +9,7 @@ export const RedeemSchema = z.object({
 });
 
 export type RedeemInput = z.infer<typeof RedeemSchema>;
-export type RedeemAdmin = {
-  from: (table: string) => any;
-  auth: { admin: { generateLink: (args: any) => Promise<any> } };
-};
+export type RedeemAdmin = SupabaseClient<Database>;
 
 function buildAdmin(): RedeemAdmin {
   const url = process.env.SUPABASE_URL!;
