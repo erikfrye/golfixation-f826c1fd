@@ -1007,3 +1007,53 @@ function HoleCard({
     </div>
   );
 }
+
+function AnimatedHole({
+  holeNumber,
+  numHoles,
+  children,
+}: {
+  holeNumber: number;
+  numHoles: number;
+  children: (renderedHole: number) => React.ReactNode;
+}) {
+  const [displayed, setDisplayed] = useState(holeNumber);
+  const [phase, setPhase] = useState<"in" | "out">("in");
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
+  const pendingRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (holeNumber === displayed) return;
+    const n = numHoles || 1;
+    const forwardDist = ((holeNumber - displayed) % n + n) % n;
+    const dir: "forward" | "back" = forwardDist === 0 || forwardDist <= n / 2 ? "forward" : "back";
+    setDirection(dir);
+    pendingRef.current = holeNumber;
+    setPhase("out");
+    const t = setTimeout(() => {
+      if (pendingRef.current !== null) {
+        setDisplayed(pendingRef.current);
+        pendingRef.current = null;
+      }
+      setPhase("in");
+    }, 180);
+    return () => clearTimeout(t);
+  }, [holeNumber, displayed, numHoles]);
+
+  const cls =
+    phase === "out"
+      ? direction === "forward"
+        ? "animate-hole-out-left"
+        : "animate-hole-out-right"
+      : direction === "forward"
+        ? "animate-hole-in-right"
+        : "animate-hole-in-left";
+
+  return (
+    <div className="relative overflow-hidden">
+      <div key={`${displayed}-${phase}`} className={cls}>
+        {children(displayed)}
+      </div>
+    </div>
+  );
+}
