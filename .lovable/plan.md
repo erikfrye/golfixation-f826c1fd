@@ -1,114 +1,45 @@
 ## Goal
-Establish a first test safety net covering: (1) test tooling, (2) pure-logic unit tests for `offline-queue` + `genCode`, (3) server-function contract tests with a mocked Supabase admin client.
 
-## 1. Tooling
+When a captain saves a score (or taps Prev/Next/picker) on the captain scoring view, the current hole card should slide out to the left while the next hole card slides in from the right. This gives clear visual feedback that the score landed and the app moved on.
 
-Install dev deps:
-- `vitest`, `@vitest/coverage-v8`
-- `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`
-- `jsdom`, `happy-dom` (use `jsdom`)
+## Where it lives
 
-Add to `package.json` scripts:
-- `"test": "vitest run"`
-- `"test:watch": "vitest"`
-- `"test:coverage": "vitest run --coverage"`
+Only one screen needs to change: `src/routes/captain.team.$teamId.index.tsx`, around the `<HoleCard key={activeHole.hole_number} ... />` block (~line 340–367). No business logic, server-function, or query changes.
 
-Create `vitest.config.ts` with:
-- `environment: "jsdom"`
-- `globals: true`
-- `setupFiles: ["./src/test/setup.ts"]`
-- Path alias `@` → `./src` (mirroring tsconfig)
-- `include: ["src/**/*.{test,spec}.{ts,tsx}"]`
+## Approach
 
-Create `src/test/setup.ts`:
-- imports `@testing-library/jest-dom`
-- stubs `localStorage` (jsdom provides it, no-op)
-- silences `navigator.onLine` toggling helper
+Keep the existing `currentHole` state as the source of truth. Add a thin presentation wrapper that owns the transition:
 
-Create `src/test/helpers.ts`:
-- `mockSupabaseAdmin()` — factory returning a chainable jest-style mock for `.from().select()/.insert()/.eq()/.maybeSingle()/.order()/.ilike()/.upsert()` plus `.auth.admin.generateLink()`. Each method returns `this` until a terminal awaited call resolves with a configured `{ data, error }`.
-- `mockRequireSupabaseAuthContext({ userId, email })` — used by handler invocations.
+1. Add two CSS keyframes in `src/styles.css` next to the existing modal/sheet animations:
+   - `hole-slide-in-right` — translateX(24px) + opacity 0 → translateX(0) + opacity 1
+   - `hole-slide-out-left` — translateX(0) + opacity 1 → translateX(-24px) + opacity 0
+   - Plus `.animate-hole-in` / `.animate-hole-out` utility classes (~220ms / ~180ms, same easing curve as the existing `modal-in`).
+   - Also add a `hole-slide-in-left` / `hole-slide-out-right` pair so going backward (Prev) slides the opposite direction. Small polish, same pattern.
 
-Update `tsconfig.json` `types` to include `vitest/globals` and `@testing-library/jest-dom`.
+2. Introduce a small `AnimatedHole` component inside the same route file (kept local — it is pure presentation). It:
+   - Takes `holeNumber` plus the rendered `<HoleCard>` as `children`.
+   - Tracks `displayedHole` and a `direction` ("forward" | "back").
+   - When `holeNumber` prop changes, sets a `leaving` flag, waits for the out animation (~180ms via `setTimeout`), then swaps `displayedHole` to the new value and clears `leaving` so the new card mounts with the in animation.
+   - Picks direction by comparing new vs previous hole_number (wrap-aware: use the same `wrap()` helper already in the file so 18 → 1 still counts as "forward").
+   - Renders a single child at a time inside a `relative overflow-hidden` wrapper so the sliding element does not cause horizontal page scroll on mobile.
 
-## 2. Pure-logic unit tests
+3. Replace the current `<HoleCard ... />` usage with `<AnimatedHole holeNumber={activeHole.hole_number} direction={...}> <HoleCard ... /> </AnimatedHole>`. Keep `key={activeHole.hole_number}` on the inner `HoleCard` so its internal form state still resets per hole.
 
-### `src/lib/__tests__/offline-queue.test.ts`
-Covers `TeamQueue` via `getQueueForTeam`. Mock `@/integrations/supabase/client` so `supabase.from().upsert()` and `supabase.auth.getSession()` are controllable. Use fake timers.
-- enqueue: new item is created with `status=pending`, persisted to `localStorage`, listener fires.
-- enqueue dedupe: re-enqueueing same `team_id:hole_number` replaces payload, resets attempts, keeps original `queuedAt`.
-- removeByHole: removes matching item and persists.
-- flush success: when online + session present, upsert called with payload, item removed, `lastSyncedAt` updated.
-- flush failure with retry/backoff: upsert returns error → item stays, `attempts` increments, `nextAttemptAt` follows `BACKOFFS` sequence (2s, 5s, 15s, 30s, 30s).
-- offline guard: `navigator.onLine=false` → no upsert attempted.
-- no-session guard: `getSession` returns null → no upsert attempted.
-- retryAll: resets failed/scheduled items to pending immediately.
-- subscribe/snapshot: notifies on changes; cached snapshot identity changes only after mutation.
+4. Respect `prefers-reduced-motion`: in the keyframes section, wrap the slide animations in `@media (prefers-reduced-motion: reduce)` to collapse to a simple opacity fade (or no animation). This matches accessibility expectations and avoids motion sickness for users who opt out.
 
-### `src/lib/__tests__/gen-code.test.ts`
-`genCode` isn't exported. Re-export it from `admin.functions.ts` as `export function genCode` so tests can import it without invoking server-fn machinery.
-- default length 6.
-- only uses allowed alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no I/O/0/1).
-- 10k samples have reasonable distribution (no duplicates > expected).
+## Why this over alternatives
 
-## 3. Server-function contract tests
+- **Pure CSS + a tiny stateful wrapper** matches the patterns already in this project (`useExitAnimation`, `animate-modal-in/out`, `animate-sheet-in/out` in `styles.css`). No new dependency.
+- **Framer Motion / `motion` package** would also work and gives `AnimatePresence` for free, but it is a ~50KB add for one transition on one screen — not worth it given existing CSS-animation conventions.
+- Keeping the wrapper local to the captain route avoids growing the shared component surface for a single use site. If a second screen ever needs the same effect we can promote it to `src/components/`.
 
-Server functions built with `createServerFn` aren't trivially invokable in unit tests (they wrap handlers with middleware). Strategy: extract each handler body into a plain async function (e.g. `cloneTournamentHandler({ admin, userId, data })`) and have the `createServerFn` `.handler()` call that function. This lets tests exercise pure handler logic with a mocked admin client and synthesized context.
+## Out of scope
 
-Refactor `src/lib/admin.functions.ts` and `src/lib/captain.functions.ts`:
-- Pull each handler body into an exported async function.
-- Keep `assertAdmin` exported.
-- Keep `getAdminClient` as the default client provider; pass a client into handlers (dependency injection) for testability.
+- No changes to score-save logic, queue, realtime subscription, or `HoleCard` internals.
+- No changes to the bottom nav bar styling, the hole picker sheet, or the leaderboard view.
+- No new tests — this is presentational. Existing tests are unaffected.
 
-### `src/lib/__tests__/admin.functions.test.ts`
-Using `mockSupabaseAdmin()`:
-- `assertAdmin`: throws "Forbidden" when no row; passes when row exists.
-- `adminListTournaments`: throws if not admin; returns rows on success; surfaces query error.
-- `adminGetTournament`: validates `id` is uuid (zod); returns row.
-- `adminListTeams`: admin gate; returns ordered rows.
-- `listMyCaptainTeams`: returns `[]` when no email claim; uses `ilike` with lowercased email; bubbles error.
-- `adminGetScoreAudit`: admin gate; returns `{ entries, teams, players }`; rejects on any sub-query error.
-- `adminCloneTournament`:
-  - throws when source missing.
-  - clones settings: new row has `status="draft"`, `created_by=userId`, fresh `override_code` (6 chars from alphabet).
-  - copies all holes 1:1 to new tournament_id.
-  - skips hole insert when source has zero holes.
-  - propagates insert error.
+## Files touched
 
-### `src/lib/__tests__/captain.functions.test.ts`
-- `redeemOverrideCode`:
-  - zod rejects bad email / short code.
-  - normalizes code (uppercase) and email (lowercase) before lookup.
-  - "Invalid override code" when tournament missing.
-  - "Email is not registered…" when team missing.
-  - success returns `{ tokenHash, email, tournamentName, teamName }`.
-  - `generateLink` error surfaces.
-
-## Out of scope (deferred to a later PR)
-
-- Component tests (`UserMenu`, `ThemeSwitcher`, login page)
-- Route smoke tests
-- Playwright e2e
-- pgTAP/RLS tests
-
-## Files to add
-
-- `vitest.config.ts`
-- `src/test/setup.ts`
-- `src/test/helpers.ts`
-- `src/lib/__tests__/offline-queue.test.ts`
-- `src/lib/__tests__/gen-code.test.ts`
-- `src/lib/__tests__/admin.functions.test.ts`
-- `src/lib/__tests__/captain.functions.test.ts`
-
-## Files to modify
-
-- `package.json` — scripts + devDeps
-- `tsconfig.json` — `types` additions; include `src/test` and test files
-- `src/lib/admin.functions.ts` — export `genCode`, extract handler bodies into testable functions
-- `src/lib/captain.functions.ts` — extract handler body into testable function
-
-## Verification
-
-- `bun run test` passes all suites.
-- `bun run build` still succeeds (no behavior changes; refactors keep server-fn exports intact).
+- `src/routes/captain.team.$teamId.index.tsx` — add `AnimatedHole` component, wrap `HoleCard`, track previous hole for direction.
+- `src/styles.css` — add 4 keyframes + 4 utility classes + reduced-motion override.
