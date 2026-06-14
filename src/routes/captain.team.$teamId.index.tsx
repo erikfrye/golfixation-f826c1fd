@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, Minus, Plus, Check, ChevronRight, Grid3x3, X, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -339,30 +339,37 @@ function TeamScoring() {
 
           {activeHole && (
             <div className="mt-6">
-              <HoleCard
-                key={activeHole.hole_number}
-                team={team}
-                tournament={tournament}
-                hole={activeHole}
-                players={players}
-                isTexasScramble={isTexasScramble}
-                mulligansEnabled={mulligansEnabled}
-                existing={scoreByHole.get(activeHole.hole_number) ?? null}
-                teeShotCounts={teeShotCounts}
-                mulliganCounts={mulliganCounts}
-                teeShotRestrictionActive={teeShotRestrictionActive}
-                playersNeedingTeeShots={playersNeedingTeeShots}
-                pendingStatus={
-                  pendingByHole.has(activeHole.hole_number)
-                    ? pendingByHole.get(activeHole.hole_number)!.attempts >= 3
-                      ? "failed"
-                      : "pending"
-                    : null
-                }
-                onSaved={() => {
-                  if (nextHole) setCurrentHole(nextHole.hole_number);
+              <AnimatedHole holeNumber={activeHole.hole_number} numHoles={numHoles}>
+                {(renderedHole) => {
+                  const h = holes.find((x) => x.hole_number === renderedHole) ?? activeHole;
+                  return (
+                    <HoleCard
+                      key={h.hole_number}
+                      team={team}
+                      tournament={tournament}
+                      hole={h}
+                      players={players}
+                      isTexasScramble={isTexasScramble}
+                      mulligansEnabled={mulligansEnabled}
+                      existing={scoreByHole.get(h.hole_number) ?? null}
+                      teeShotCounts={teeShotCounts}
+                      mulliganCounts={mulliganCounts}
+                      teeShotRestrictionActive={teeShotRestrictionActive}
+                      playersNeedingTeeShots={playersNeedingTeeShots}
+                      pendingStatus={
+                        pendingByHole.has(h.hole_number)
+                          ? pendingByHole.get(h.hole_number)!.attempts >= 3
+                            ? "failed"
+                            : "pending"
+                          : null
+                      }
+                      onSaved={() => {
+                        if (nextHole) setCurrentHole(nextHole.hole_number);
+                      }}
+                    />
+                  );
                 }}
-              />
+              </AnimatedHole>
             </div>
           )}
 
@@ -997,6 +1004,56 @@ function HoleCard({
           </button>
         </div>
       </SheetDialog>
+    </div>
+  );
+}
+
+function AnimatedHole({
+  holeNumber,
+  numHoles,
+  children,
+}: {
+  holeNumber: number;
+  numHoles: number;
+  children: (renderedHole: number) => React.ReactNode;
+}) {
+  const [displayed, setDisplayed] = useState(holeNumber);
+  const [phase, setPhase] = useState<"in" | "out">("in");
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
+  const pendingRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (holeNumber === displayed) return;
+    const n = numHoles || 1;
+    const forwardDist = ((holeNumber - displayed) % n + n) % n;
+    const dir: "forward" | "back" = forwardDist === 0 || forwardDist <= n / 2 ? "forward" : "back";
+    setDirection(dir);
+    pendingRef.current = holeNumber;
+    setPhase("out");
+    const t = setTimeout(() => {
+      if (pendingRef.current !== null) {
+        setDisplayed(pendingRef.current);
+        pendingRef.current = null;
+      }
+      setPhase("in");
+    }, 180);
+    return () => clearTimeout(t);
+  }, [holeNumber, displayed, numHoles]);
+
+  const cls =
+    phase === "out"
+      ? direction === "forward"
+        ? "animate-hole-out-left"
+        : "animate-hole-out-right"
+      : direction === "forward"
+        ? "animate-hole-in-right"
+        : "animate-hole-in-left";
+
+  return (
+    <div className="relative overflow-hidden">
+      <div key={`${displayed}-${phase}`} className={cls}>
+        {children(displayed)}
+      </div>
     </div>
   );
 }
