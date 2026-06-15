@@ -1,45 +1,113 @@
-## Goal
 
-When a captain saves a score (or taps Prev/Next/picker) on the captain scoring view, the current hole card should slide out to the left while the next hole card slides in from the right. This gives clear visual feedback that the score landed and the app moved on.
+# Proximity Contests
 
-## Where it lives
+Add per-tournament "proximity contests" (longest drive, closest to pin, longest putt, etc.). Admins define them, captains enter winners on the assigned hole, leaderboard shows current leader + history.
 
-Only one screen needs to change: `src/routes/captain.team.$teamId.index.tsx`, around the `<HoleCard key={activeHole.hole_number} ... />` block (~line 340–367). No business logic, server-function, or query changes.
+## Data model
 
-## Approach
+Two new tables in `public`.
 
-Keep the existing `currentHole` state as the source of truth. Add a thin presentation wrapper that owns the transition:
+### `proximity_contests`
+Admin-defined contest tied to a tournament and a specific hole.
 
-1. Add two CSS keyframes in `src/styles.css` next to the existing modal/sheet animations:
-   - `hole-slide-in-right` — translateX(24px) + opacity 0 → translateX(0) + opacity 1
-   - `hole-slide-out-left` — translateX(0) + opacity 1 → translateX(-24px) + opacity 0
-   - Plus `.animate-hole-in` / `.animate-hole-out` utility classes (~220ms / ~180ms, same easing curve as the existing `modal-in`).
-   - Also add a `hole-slide-in-left` / `hole-slide-out-right` pair so going backward (Prev) slides the opposite direction. Small polish, same pattern.
+- `id` uuid pk
+- `tournament_id` uuid fk → tournaments (cascade)
+- `hole_number` int (1–18, validated against tournament's `num_holes`)
+- `name` text — e.g. "Longest Drive", "Closest to the Pin"
+- `kind` text — preset enum: `longest_drive` | `closest_to_pin` | `longest_putt` | `other` (drives default icon/label, not behavior)
+- `eligibility` text — `everyone` | `men` | `women`
+- `sponsor` text nullable
+- `sort_order` int (for stable ordering within a hole)
+- `created_at`, `updated_at`
 
-2. Introduce a small `AnimatedHole` component inside the same route file (kept local — it is pure presentation). It:
-   - Takes `holeNumber` plus the rendered `<HoleCard>` as `children`.
-   - Tracks `displayedHole` and a `direction` ("forward" | "back").
-   - When `holeNumber` prop changes, sets a `leaving` flag, waits for the out animation (~180ms via `setTimeout`), then swaps `displayedHole` to the new value and clears `leaving` so the new card mounts with the in animation.
-   - Picks direction by comparing new vs previous hole_number (wrap-aware: use the same `wrap()` helper already in the file so 18 → 1 still counts as "forward").
-   - Renders a single child at a time inside a `relative overflow-hidden` wrapper so the sliding element does not cause horizontal page scroll on mobile.
+Unique: `(tournament_id, hole_number, name)`.
 
-3. Replace the current `<HoleCard ... />` usage with `<AnimatedHole holeNumber={activeHole.hole_number} direction={...}> <HoleCard ... /> </AnimatedHole>`. Keep `key={activeHole.hole_number}` on the inner `HoleCard` so its internal form state still resets per hole.
+### `proximity_entries`
+Append-only log of every entry; "current leader" = most recent entry.
 
-4. Respect `prefers-reduced-motion`: in the keyframes section, wrap the slide animations in `@media (prefers-reduced-motion: reduce)` to collapse to a simple opacity fade (or no animation). This matches accessibility expectations and avoids motion sickness for users who opt out.
+- `id` uuid pk
+- `contest_id` uuid fk → proximity_contests (cascade)
+- `tournament_id` uuid (denormalized for RLS + realtime filtering)
+- `team_id` uuid fk → teams (cascade)
+- `player_id` uuid fk → team_players nullable (cascade set null) — single player per entry
+- `player_name_snapshot` text — captured at entry time so history survives roster changes
+- `team_name_snapshot` text
+- `entered_at` timestamptz default now()
+- `entered_by` uuid (auth.uid()) nullable
+- `note` text nullable (optional measurement, e.g. "287 yds", "4 ft 2 in" — free text, not required)
 
-## Why this over alternatives
+Indexes: `(contest_id, entered_at desc)`, `(tournament_id)`.
 
-- **Pure CSS + a tiny stateful wrapper** matches the patterns already in this project (`useExitAnimation`, `animate-modal-in/out`, `animate-sheet-in/out` in `styles.css`). No new dependency.
-- **Framer Motion / `motion` package** would also work and gives `AnimatePresence` for free, but it is a ~50KB add for one transition on one screen — not worth it given existing CSS-animation conventions.
-- Keeping the wrapper local to the captain route avoids growing the shared component surface for a single use site. If a second screen ever needs the same effect we can promote it to `src/components/`.
+### RLS
 
-## Out of scope
+- `proximity_contests`: admins manage; public SELECT when parent tournament is active/completed (mirror `holes` policy).
+- `proximity_entries`: admins manage; public SELECT under same visibility rule; captains INSERT when `is_team_captain(team_id, auth.uid())` AND the contest's tournament matches the team's tournament. No UPDATE for captains — entries are append-only; admins can DELETE to correct mistakes (writes a row to `hole_score_audit`-style log? — out of scope; rely on admin delete + re-enter for v1).
+- Add both tables to `supabase_realtime` publication.
+- GRANTs: `SELECT` to anon+authenticated, `INSERT/UPDATE/DELETE` to authenticated, ALL to service_role.
 
-- No changes to score-save logic, queue, realtime subscription, or `HoleCard` internals.
-- No changes to the bottom nav bar styling, the hole picker sheet, or the leaderboard view.
-- No new tests — this is presentational. Existing tests are unaffected.
+## Server functions
 
-## Files touched
+New file `src/lib/proximity.functions.ts`:
 
-- `src/routes/captain.team.$teamId.index.tsx` — add `AnimatedHole` component, wrap `HoleCard`, track previous hole for direction.
-- `src/styles.css` — add 4 keyframes + 4 utility classes + reduced-motion override.
+- `adminListProximityContests({ tournamentId })` — admin only
+- `adminUpsertProximityContest({ id?, tournamentId, holeNumber, name, kind, eligibility, sponsor, sortOrder })`
+- `adminDeleteProximityContest({ id })`
+- `adminDeleteProximityEntry({ id })`
+- `captainAddProximityEntry({ contestId, teamId, playerId, note? })` — uses `requireSupabaseAuth`; server reads team_players + teams to snapshot names; verifies captain via existing pattern.
+- `listProximityContests({ tournamentId })` — public read (RLS-scoped); returns contests + current leader (latest entry per contest) joined.
+- `listProximityHistory({ contestId })` — public read; returns full entry log ordered `entered_at desc`.
+
+Public reads can stay on the browser supabase client too, but a server fn keeps the leader join consistent.
+
+## Admin UI
+
+In `src/routes/admin.tournaments.$id.tsx`, add a new "Proximity Contests" section (collapsible):
+
+- List existing contests grouped by hole.
+- "Add proximity" button → dialog with: hole picker (1..num_holes), name, kind (select), eligibility (radio: everyone/men/women), optional sponsor, optional sort_order.
+- Each row: edit + delete.
+- Optionally a separate page `admin.tournaments.$id_.proximity.tsx` if the section gets large — start inline.
+
+## Captain UI
+
+In `src/routes/captain.team.$teamId.index.tsx`, inside `HoleCard` for the active hole:
+
+- Query proximity contests for the tournament filtered to `hole_number === activeHole.hole_number`.
+- For each contest card show: name + sponsor chip + eligibility badge.
+- "Current leader" row (player name + team + relative time) — pulled from latest entry.
+- "Add entry" button → small sheet/dialog: select player from the team's `team_players` (filter by eligibility when men/women — requires a `gender` field on `team_players`; see Open question below), optional note, submit → calls `captainAddProximityEntry`.
+- Below leader, collapsible "Recent entries" list (most recent on top).
+- Realtime: subscribe to `proximity_entries` filtered by tournament_id; on insert, invalidate the contest query so the leader/log refreshes.
+
+## Leaderboard UI
+
+In `src/routes/tournament.$id.tsx`, add a new "Proximity Contests" panel between the leaderboard table and the about section:
+
+- One row per contest: hole number, name, sponsor (if any), eligibility badge, current leader (player + team + relative time).
+- Click row → expands inline (or opens a dialog) with full history list: every entry in `entered_at desc` order with player, team, time, optional note.
+- Realtime: same subscription as captain view to keep leader live.
+
+## Eligibility for men/women
+
+`team_players` has no gender field today. Two options:
+
+1. Add `gender` text column to `team_players` (`male | female | unspecified`); captain edits it on the team page. Filter player picker by contest eligibility. **Recommended.**
+2. Skip filtering — eligibility is informational only; captain self-polices. Faster to ship.
+
+Default to option 1 — without gender filtering the men/women contests are unenforceable. Migration adds the column nullable with no default; captain UI exposes a simple select on each player.
+
+## File changes
+
+- New migration: `proximity_contests`, `proximity_entries`, RLS, GRANTs, realtime publication, `team_players.gender` column.
+- New: `src/lib/proximity.functions.ts`
+- Edited: `src/routes/admin.tournaments.$id.tsx` (proximity section)
+- Edited: `src/routes/captain.team.$teamId.index.tsx` (per-hole proximity cards + player gender select on roster)
+- Edited: `src/routes/tournament.$id.tsx` (leaderboard panel + history view)
+- New small components: `src/components/proximity/contest-card.tsx`, `src/components/proximity/history-list.tsx`, `src/components/proximity/add-entry-dialog.tsx`.
+
+## Out of scope (v1)
+
+- Numeric measurement comparison ("longest" computed from yardage) — `note` is free text only; "most recent entry = current leader" matches the requested behavior.
+- Multi-winner contests, ties.
+- Photo proof attachments.
+- Editing past entries (admins can delete + re-enter).
