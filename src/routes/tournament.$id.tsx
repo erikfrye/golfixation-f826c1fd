@@ -9,6 +9,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { UserMenu } from "@/components/user-menu";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
 import { InstallPrompt } from "@/components/install-prompt";
+import { ProximityLeaderboardSection } from "@/components/proximity/leaderboard-section";
 
 export const Route = createFileRoute("/tournament/$id")({
   head: ({ params }) => ({
@@ -351,6 +352,8 @@ function TournamentPage() {
                 </ul>
               </div>
             )}
+
+            <ProximityLeaderboardSection tournamentId={id} />
           </>
         )}
       </main>

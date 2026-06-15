@@ -10,6 +10,7 @@ import { getQueueForTeam, type HoleScorePayload } from "@/lib/offline-queue";
 import { useOfflineQueue } from "@/hooks/use-offline-queue";
 import { SyncStatusPill } from "@/components/captain/sync-status-pill";
 import { LiveIndicator } from "@/components/live-indicator";
+import { CaptainHoleContests } from "@/components/proximity/captain-hole-contests";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -343,6 +344,7 @@ function TeamScoring() {
                 {(renderedHole) => {
                   const h = holes.find((x) => x.hole_number === renderedHole) ?? activeHole;
                   return (
+                    <>
                     <HoleCard
                       key={h.hole_number}
                       team={team}
@@ -367,6 +369,14 @@ function TeamScoring() {
                         if (nextHole) setCurrentHole(nextHole.hole_number);
                       }}
                     />
+                    <CaptainHoleContests
+                      tournamentId={tournament.id}
+                      teamId={team.id}
+                      teamName={team.name}
+                      holeNumber={h.hole_number}
+                      players={players.map((p) => ({ id: p.id, name: p.name }))}
+                    />
+                    </>
                   );
                 }}
               </AnimatedHole>

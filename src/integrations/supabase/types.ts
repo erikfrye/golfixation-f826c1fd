@@ -204,9 +204,125 @@ export type Database = {
           },
         ]
       }
+      proximity_contests: {
+        Row: {
+          created_at: string
+          eligibility: string
+          hole_number: number
+          id: string
+          kind: string
+          name: string
+          sort_order: number
+          sponsor: string | null
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          eligibility?: string
+          hole_number: number
+          id?: string
+          kind?: string
+          name: string
+          sort_order?: number
+          sponsor?: string | null
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          eligibility?: string
+          hole_number?: number
+          id?: string
+          kind?: string
+          name?: string
+          sort_order?: number
+          sponsor?: string | null
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proximity_contests_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proximity_entries: {
+        Row: {
+          contest_id: string
+          entered_at: string
+          entered_by: string | null
+          id: string
+          note: string | null
+          player_id: string | null
+          player_name_snapshot: string
+          team_id: string
+          team_name_snapshot: string
+          tournament_id: string
+        }
+        Insert: {
+          contest_id: string
+          entered_at?: string
+          entered_by?: string | null
+          id?: string
+          note?: string | null
+          player_id?: string | null
+          player_name_snapshot: string
+          team_id: string
+          team_name_snapshot: string
+          tournament_id: string
+        }
+        Update: {
+          contest_id?: string
+          entered_at?: string
+          entered_by?: string | null
+          id?: string
+          note?: string | null
+          player_id?: string | null
+          player_name_snapshot?: string
+          team_id?: string
+          team_name_snapshot?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proximity_entries_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "proximity_contests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_entries_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "team_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_entries_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_entries_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_players: {
         Row: {
           created_at: string
+          gender: string | null
           id: string
           mulligans_total: number
           mulligans_used: number
@@ -217,6 +333,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          gender?: string | null
           id?: string
           mulligans_total?: number
           mulligans_used?: number
@@ -227,6 +344,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          gender?: string | null
           id?: string
           mulligans_total?: number
           mulligans_used?: number

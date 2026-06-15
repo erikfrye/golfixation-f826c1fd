@@ -11,6 +11,7 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import { Switch } from "@/components/ui/switch";
+import { AdminProximitySection } from "@/components/proximity/admin-section";
 
 export const Route = createFileRoute("/admin/tournaments/$id")({
   component: EditTournament,
@@ -336,6 +337,10 @@ function EditTournament() {
             {saving ? "Saving…" : "Save changes"}
           </button>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <AdminProximitySection tournamentId={id} numHoles={tQ.data.num_holes} />
       </div>
     </div>
   );
