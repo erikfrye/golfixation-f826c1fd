@@ -21,6 +21,7 @@ export type ProximityEntry = {
   team_name_snapshot: string;
   note: string | null;
   entered_at: string;
+  round_position: number;
 };
 
 export const KIND_LABEL: Record<ProximityKind, string> = {

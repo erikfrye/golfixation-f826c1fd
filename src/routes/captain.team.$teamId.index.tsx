@@ -375,6 +375,8 @@ function TeamScoring() {
                       teamName={team.name}
                       holeNumber={h.hole_number}
                       players={players.map((p) => ({ id: p.id, name: p.name }))}
+                      startHole={team.start_hole ?? 1}
+                      numHoles={tournament.num_holes}
                     />
                     </>
                   );
