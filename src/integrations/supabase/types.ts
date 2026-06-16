@@ -260,6 +260,7 @@ export type Database = {
           note: string | null
           player_id: string | null
           player_name_snapshot: string
+          round_position: number
           team_id: string
           team_name_snapshot: string
           tournament_id: string
@@ -272,6 +273,7 @@ export type Database = {
           note?: string | null
           player_id?: string | null
           player_name_snapshot: string
+          round_position: number
           team_id: string
           team_name_snapshot: string
           tournament_id: string
@@ -284,6 +286,7 @@ export type Database = {
           note?: string | null
           player_id?: string | null
           player_name_snapshot?: string
+          round_position?: number
           team_id?: string
           team_name_snapshot?: string
           tournament_id?: string
