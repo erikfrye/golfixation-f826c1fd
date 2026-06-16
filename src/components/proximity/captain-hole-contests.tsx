@@ -25,9 +25,19 @@ type Props = {
   teamName: string;
   holeNumber: number;
   players: TeamPlayer[];
+  startHole: number;
+  numHoles: number;
 };
 
-export function CaptainHoleContests({ tournamentId, teamId, teamName, holeNumber, players }: Props) {
+export function CaptainHoleContests({
+  tournamentId,
+  teamId,
+  teamName,
+  holeNumber,
+  players,
+  startHole,
+  numHoles,
+}: Props) {
   const qc = useQueryClient();
 
   const contestsQ = useQuery({
@@ -49,8 +59,9 @@ export function CaptainHoleContests({ tournamentId, teamId, teamName, holeNumber
     queryFn: async () => {
       const { data, error } = await supabase
         .from("proximity_entries")
-        .select("id, contest_id, team_id, player_id, player_name_snapshot, team_name_snapshot, note, entered_at")
+        .select("id, contest_id, team_id, player_id, player_name_snapshot, team_name_snapshot, note, entered_at, round_position")
         .eq("tournament_id", tournamentId)
+        .order("round_position", { ascending: false })
         .order("entered_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as ProximityEntry[];
@@ -79,6 +90,8 @@ export function CaptainHoleContests({ tournamentId, teamId, teamName, holeNumber
   const holeContests = (contestsQ.data ?? []).filter((c) => c.hole_number === holeNumber);
   if (holeContests.length === 0) return null;
 
+  const roundPosition = ((holeNumber - startHole + numHoles) % numHoles) + 1;
+
   return (
     <div className="mt-4 space-y-3">
       {holeContests.map((contest) => {
@@ -91,6 +104,7 @@ export function CaptainHoleContests({ tournamentId, teamId, teamName, holeNumber
             teamId={teamId}
             teamName={teamName}
             players={players}
+            roundPosition={roundPosition}
           />
         );
       })}
@@ -104,12 +118,14 @@ function ContestCard({
   teamId,
   teamName,
   players,
+  roundPosition,
 }: {
   contest: ProximityContest;
   entries: ProximityEntry[];
   teamId: string;
   teamName: string;
   players: TeamPlayer[];
+  roundPosition: number;
 }) {
   const [open, setOpen] = useState(false);
   const [playerId, setPlayerId] = useState("");
@@ -143,6 +159,7 @@ function ContestCard({
         team_name_snapshot: teamName,
         note: note.trim() ? note.trim() : null,
         entered_by: auth.user?.id ?? null,
+        round_position: roundPosition,
       });
       if (error) throw error;
       setPlayerId("");

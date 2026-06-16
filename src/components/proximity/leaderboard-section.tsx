@@ -39,8 +39,9 @@ export function ProximityLeaderboardSection({ tournamentId }: { tournamentId: st
     queryFn: async () => {
       const { data, error } = await supabase
         .from("proximity_entries")
-        .select("id, contest_id, team_id, player_id, player_name_snapshot, team_name_snapshot, note, entered_at")
+        .select("id, contest_id, team_id, player_id, player_name_snapshot, team_name_snapshot, note, entered_at, round_position")
         .eq("tournament_id", tournamentId)
+        .order("round_position", { ascending: false })
         .order("entered_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as ProximityEntry[];
