@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Target, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -125,29 +125,25 @@ export function AdminProximitySection({ tournamentId, numHoles }: Props) {
   const contests = contestsQ.data ?? [];
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-semibold text-foreground">Proximity contests</h2>
-        </div>
+    <div>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          Longest drive, closest to the pin, longest putt, etc. Captains can record entries on the matching hole; the
+          most recent entry is the current leader.
+        </p>
         <button
           type="button"
           onClick={openNew}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-3.5 w-3.5" /> Add
         </button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Longest drive, closest to the pin, longest putt, etc. Captains can record entries on the matching hole; the most
-        recent entry is the current leader.
-      </p>
 
       {contests.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">No proximity contests yet.</p>
+        <p className="text-sm text-muted-foreground">No proximity contests yet.</p>
       ) : (
-        <ul className="mt-4 divide-y divide-border">
+        <ul className="divide-y divide-border">
           {contests.map((c) => (
             <li key={c.id} className="flex items-center gap-3 py-2.5">
               <span className="inline-flex h-7 w-10 shrink-0 items-center justify-center rounded-md border border-border font-mono text-xs">
