@@ -155,6 +155,28 @@ export async function adminCloneTournamentHandler(
     if (hInsErr) throw new Error(hInsErr.message);
   }
 
+  const { data: srcContests, error: pcErr } = await a
+    .from("proximity_contests")
+    .select("hole_number, name, kind, eligibility, sponsor, sort_order")
+    .eq("tournament_id", data.id);
+  if (pcErr) throw new Error(pcErr.message);
+
+  if (srcContests && srcContests.length > 0) {
+    const rows = srcContests.map((c) => ({
+      tournament_id: newT.id,
+      hole_number: c.hole_number,
+      name: c.name,
+      kind: c.kind,
+      eligibility: c.eligibility,
+      sponsor: c.sponsor,
+      sort_order: c.sort_order,
+    }));
+    const { error: pcInsErr } = await a
+      .from("proximity_contests")
+      .insert(rows);
+    if (pcInsErr) throw new Error(pcInsErr.message);
+  }
+
   return { id: newT.id };
 }
 
