@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, Users, Trash2, History } from "lucide-react";
+import { ChevronLeft, Users, Trash2, History, Settings, Target } from "lucide-react";
 import { adminGetTournament } from "@/lib/admin.functions";
 import {
   Accordion,
@@ -289,7 +289,10 @@ function EditTournament() {
         <Accordion type="single" collapsible className="border-t border-border">
           <AccordionItem value="advanced" className="border-b-0">
             <AccordionTrigger className="text-sm font-medium text-foreground">
-              Advanced settings
+              <span className="flex items-center gap-2">
+                <Settings className="h-4 w-4 text-primary" />
+                Advanced settings
+              </span>
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-5 pt-2">
@@ -318,6 +321,19 @@ function EditTournament() {
               </div>
             </AccordionContent>
           </AccordionItem>
+          <AccordionItem value="proximity" className="border-b-0 border-t border-border">
+            <AccordionTrigger className="text-sm font-medium text-foreground">
+              <span className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
+                Proximity contests
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="pt-2">
+                <AdminProximitySection tournamentId={id} numHoles={tQ.data.num_holes} />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
         </Accordion>
 
         {message && <p className="text-sm text-muted-foreground">{message}</p>}
@@ -339,9 +355,6 @@ function EditTournament() {
         </div>
       </div>
 
-      <div className="mt-6">
-        <AdminProximitySection tournamentId={id} numHoles={tQ.data.num_holes} />
-      </div>
     </div>
   );
 }
