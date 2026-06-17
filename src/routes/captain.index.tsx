@@ -27,6 +27,7 @@ function CaptainIndex() {
     queryKey: ["captain-teams", email],
     enabled: !!email,
     queryFn: async () => (await listMyCaptainTeams()) as unknown as CaptainTeam[],
+    select: (teams) => teams.filter((t) => t.tournaments?.status !== "completed"),
   });
 
   return (
