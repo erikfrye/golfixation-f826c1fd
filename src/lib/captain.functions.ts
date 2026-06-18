@@ -38,15 +38,38 @@ export async function redeemOverrideCodeHandler(admin: RedeemAdmin, data: Redeem
     .ilike("captain_email", email)
     .maybeSingle();
   if (teamErr) throw new Error(teamErr.message);
-  if (!team) throw new Error("Email is not registered as a captain for this tournament");
+  if (!team) {
+    await admin.from("override_code_redemptions").insert({
+      tournament_id: tournament.id,
+      team_id: null,
+      captain_email: email,
+      success: false,
+      failure_reason: "email_not_registered",
+    });
+    throw new Error("Email is not registered as a captain for this tournament");
+  }
 
   const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,
   });
   if (linkErr || !linkData.properties?.hashed_token) {
+    await admin.from("override_code_redemptions").insert({
+      tournament_id: tournament.id,
+      team_id: team.id,
+      captain_email: email,
+      success: false,
+      failure_reason: linkErr?.message ?? "magic_link_failed",
+    });
     throw new Error(linkErr?.message ?? "Could not generate session");
   }
+
+  await admin.from("override_code_redemptions").insert({
+    tournament_id: tournament.id,
+    team_id: team.id,
+    captain_email: email,
+    success: true,
+  });
 
   return {
     tokenHash: linkData.properties.hashed_token,
