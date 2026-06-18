@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, Users, Trash2, History, Settings, Target } from "lucide-react";
+import { ChevronLeft, Users, Trash2, History, Settings, Target, Activity } from "lucide-react";
 import { adminGetTournament } from "@/lib/admin.functions";
 import {
   Accordion,
@@ -151,6 +151,13 @@ function EditTournament() {
             className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent"
           >
             <Users className="h-4 w-4" /> Manage teams
+          </Link>
+          <Link
+            to="/admin/tournaments/$id/liveops"
+            params={{ id }}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent"
+          >
+            <Activity className="h-4 w-4" /> Live ops
           </Link>
         </div>
       </div>

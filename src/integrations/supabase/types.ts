@@ -204,6 +204,57 @@ export type Database = {
           },
         ]
       }
+      override_code_redemptions: {
+        Row: {
+          captain_email: string
+          failure_reason: string | null
+          id: string
+          ip: string | null
+          redeemed_at: string
+          success: boolean
+          team_id: string | null
+          tournament_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          captain_email: string
+          failure_reason?: string | null
+          id?: string
+          ip?: string | null
+          redeemed_at?: string
+          success?: boolean
+          team_id?: string | null
+          tournament_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          captain_email?: string
+          failure_reason?: string | null
+          id?: string
+          ip?: string | null
+          redeemed_at?: string
+          success?: boolean
+          team_id?: string | null
+          tournament_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "override_code_redemptions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "override_code_redemptions_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proximity_contests: {
         Row: {
           created_at: string
