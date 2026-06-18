@@ -1,113 +1,60 @@
+## Live Ops Dashboard
 
-# Proximity Contests
+A single screen per active tournament that surfaces four real-time health signals so admins can spot stalled rounds, edit storms, and code abuse without digging through pages.
 
-Add per-tournament "proximity contests" (longest drive, closest to pin, longest putt, etc.). Admins define them, captains enter winners on the assigned hole, leaderboard shows current leader + history.
+### Where it lives
 
-## Data model
+New route: `src/routes/admin.tournaments.$id_.liveops.tsx` (sibling to the existing `_.audit` and `_.teams` admin sub-pages). A new "Live ops" button on the admin tournament edit page links to it, alongside Score history and Manage teams.
 
-Two new tables in `public`.
+### The four panels
 
-### `proximity_contests`
-Admin-defined contest tied to a tournament and a specific hole.
+1. **Teams not yet scoring** — teams in the tournament with zero rows in `hole_scores`. Shows team name + captain email + assigned start hole (shotgun) so admins can chase them down.
+2. **Stalled holes (no submission in 30+ min)** — for every `(team_id, hole_number)` pair the team is "currently on" (their next un-scored hole given their start_hole), compute time since the team's most recent `hole_scores.updated_at`. Flag any team whose last activity was 30+ minutes ago, or who started 30+ min ago and has no scores at all. Listed as team → hole-they're-stuck-on → minutes idle.
+3. **Late-edit count (today)** — count of `hole_score_audit` rows where `action='update'` AND `changed_at::date = today (tournament local)`. Show the count plus the 10 most recent edits (team, hole, old→new strokes, who, when, reason).
+4. **Override-code redemptions today** — count of redemptions recorded today for this tournament's code. Requires a new `override_code_redemptions` table since redemptions aren't logged anywhere today.
 
-- `id` uuid pk
-- `tournament_id` uuid fk → tournaments (cascade)
-- `hole_number` int (1–18, validated against tournament's `num_holes`)
-- `name` text — e.g. "Longest Drive", "Closest to the Pin"
-- `kind` text — preset enum: `longest_drive` | `closest_to_pin` | `longest_putt` | `other` (drives default icon/label, not behavior)
-- `eligibility` text — `everyone` | `men` | `women`
-- `sponsor` text nullable
-- `sort_order` int (for stable ordering within a hole)
-- `created_at`, `updated_at`
+### Data model change
 
-Unique: `(tournament_id, hole_number, name)`.
+New table for #4:
 
-### `proximity_entries`
-Append-only log of every entry; "current leader" = most recent entry.
+```
+override_code_redemptions
+- id uuid pk
+- tournament_id uuid fk → tournaments (cascade)
+- captain_email text (lowercased)
+- team_id uuid fk → teams (set null) — resolved at redeem time when matchable
+- success boolean — true on issued magic link, false on bad-email/bad-code
+- failure_reason text nullable
+- redeemed_at timestamptz default now()
+- ip text nullable, user_agent text nullable
+```
 
-- `id` uuid pk
-- `contest_id` uuid fk → proximity_contests (cascade)
-- `tournament_id` uuid (denormalized for RLS + realtime filtering)
-- `team_id` uuid fk → teams (cascade)
-- `player_id` uuid fk → team_players nullable (cascade set null) — single player per entry
-- `player_name_snapshot` text — captured at entry time so history survives roster changes
-- `team_name_snapshot` text
-- `entered_at` timestamptz default now()
-- `entered_by` uuid (auth.uid()) nullable
-- `note` text nullable (optional measurement, e.g. "287 yds", "4 ft 2 in" — free text, not required)
+Indexes: `(tournament_id, redeemed_at desc)`. RLS: admins SELECT, service_role ALL; no anon/authenticated access. Insert happens inside the existing service-role `redeemOverrideCodeHandler` after looking up the tournament — we log both success and known failure cases (invalid code → no tournament_id so the row is skipped; wrong-email-for-valid-code → logged against that tournament).
 
-Indexes: `(contest_id, entered_at desc)`, `(tournament_id)`.
+### Server functions
 
-### RLS
+New `src/lib/liveops.functions.ts`, all admin-only (verify `is_admin(auth.uid())` inside each handler, same pattern as other admin functions):
 
-- `proximity_contests`: admins manage; public SELECT when parent tournament is active/completed (mirror `holes` policy).
-- `proximity_entries`: admins manage; public SELECT under same visibility rule; captains INSERT when `is_team_captain(team_id, auth.uid())` AND the contest's tournament matches the team's tournament. No UPDATE for captains — entries are append-only; admins can DELETE to correct mistakes (writes a row to `hole_score_audit`-style log? — out of scope; rely on admin delete + re-enter for v1).
-- Add both tables to `supabase_realtime` publication.
-- GRANTs: `SELECT` to anon+authenticated, `INSERT/UPDATE/DELETE` to authenticated, ALL to service_role.
+- `adminLiveOpsSummary({ tournamentId })` → returns `{ teamsNotScoring: TeamMini[], stalledTeams: StalledTeam[], lateEditCountToday, recentLateEdits: AuditRow[], redemptionsToday, recentRedemptions: RedemptionRow[] }`. One round-trip; all four panels render off it.
 
-## Server functions
+The "currently on" hole for a team is computed as: starting from `start_hole`, walk forward through hole numbers (wrapping at `num_holes`) and return the first hole the team has no `hole_scores` row for. If all 18 are scored, the team is done and excluded from #2.
 
-New file `src/lib/proximity.functions.ts`:
+`captain.functions.ts.redeemOverrideCodeHandler` gets an insert into `override_code_redemptions` at the end (success path) and in the two `throw new Error` branches (failure paths) — failure path needs to look up the tournament by code first (already does), and skip logging when code itself is invalid (we don't know which tournament to attribute to).
 
-- `adminListProximityContests({ tournamentId })` — admin only
-- `adminUpsertProximityContest({ id?, tournamentId, holeNumber, name, kind, eligibility, sponsor, sortOrder })`
-- `adminDeleteProximityContest({ id })`
-- `adminDeleteProximityEntry({ id })`
-- `captainAddProximityEntry({ contestId, teamId, playerId, note? })` — uses `requireSupabaseAuth`; server reads team_players + teams to snapshot names; verifies captain via existing pattern.
-- `listProximityContests({ tournamentId })` — public read (RLS-scoped); returns contests + current leader (latest entry per contest) joined.
-- `listProximityHistory({ contestId })` — public read; returns full entry log ordered `entered_at desc`.
+### UI
 
-Public reads can stay on the browser supabase client too, but a server fn keeps the leader join consistent.
+`admin.tournaments.$id_.liveops.tsx`:
+- Page header: tournament name + "Live" pulse + back link to the edit page.
+- 4-card responsive grid (1 col mobile, 2 col tablet, 4 col desktop) showing big-number counts.
+- Below: two columns of detail panels — left "Teams to chase" (combines #1 + #2 list), right "Activity" (late edits + redemptions stacked).
+- Auto-refresh: `useQuery` with `refetchInterval: 30_000` on the summary fn. Plus a Supabase Realtime subscription to `hole_scores` and `hole_score_audit` filtered by `tournament_id` that triggers `queryClient.invalidateQueries` so big changes show up immediately.
+- Empty states for each panel ("All teams are scoring", "No stalled holes", "No edits today", "No redemptions today").
 
-## Admin UI
+Link from `admin.tournaments.$id.tsx` header: new "Live ops" button next to Score history and Manage teams, visible only when `status === 'active'` (and faded/disabled for draft/completed tournaments).
 
-In `src/routes/admin.tournaments.$id.tsx`, add a new "Proximity Contests" section (collapsible):
+### Out of scope (v1)
 
-- List existing contests grouped by hole.
-- "Add proximity" button → dialog with: hole picker (1..num_holes), name, kind (select), eligibility (radio: everyone/men/women), optional sponsor, optional sort_order.
-- Each row: edit + delete.
-- Optionally a separate page `admin.tournaments.$id_.proximity.tsx` if the section gets large — start inline.
-
-## Captain UI
-
-In `src/routes/captain.team.$teamId.index.tsx`, inside `HoleCard` for the active hole:
-
-- Query proximity contests for the tournament filtered to `hole_number === activeHole.hole_number`.
-- For each contest card show: name + sponsor chip + eligibility badge.
-- "Current leader" row (player name + team + relative time) — pulled from latest entry.
-- "Add entry" button → small sheet/dialog: select player from the team's `team_players` (filter by eligibility when men/women — requires a `gender` field on `team_players`; see Open question below), optional note, submit → calls `captainAddProximityEntry`.
-- Below leader, collapsible "Recent entries" list (most recent on top).
-- Realtime: subscribe to `proximity_entries` filtered by tournament_id; on insert, invalidate the contest query so the leader/log refreshes.
-
-## Leaderboard UI
-
-In `src/routes/tournament.$id.tsx`, add a new "Proximity Contests" panel between the leaderboard table and the about section:
-
-- One row per contest: hole number, name, sponsor (if any), eligibility badge, current leader (player + team + relative time).
-- Click row → expands inline (or opens a dialog) with full history list: every entry in `entered_at desc` order with player, team, time, optional note.
-- Realtime: same subscription as captain view to keep leader live.
-
-## Eligibility for men/women
-
-`team_players` has no gender field today. Two options:
-
-1. Add `gender` text column to `team_players` (`male | female | unspecified`); captain edits it on the team page. Filter player picker by contest eligibility. **Recommended.**
-2. Skip filtering — eligibility is informational only; captain self-polices. Faster to ship.
-
-Default to option 1 — without gender filtering the men/women contests are unenforceable. Migration adds the column nullable with no default; captain UI exposes a simple select on each player.
-
-## File changes
-
-- New migration: `proximity_contests`, `proximity_entries`, RLS, GRANTs, realtime publication, `team_players.gender` column.
-- New: `src/lib/proximity.functions.ts`
-- Edited: `src/routes/admin.tournaments.$id.tsx` (proximity section)
-- Edited: `src/routes/captain.team.$teamId.index.tsx` (per-hole proximity cards + player gender select on roster)
-- Edited: `src/routes/tournament.$id.tsx` (leaderboard panel + history view)
-- New small components: `src/components/proximity/contest-card.tsx`, `src/components/proximity/history-list.tsx`, `src/components/proximity/add-entry-dialog.tsx`.
-
-## Out of scope (v1)
-
-- Numeric measurement comparison ("longest" computed from yardage) — `note` is free text only; "most recent entry = current leader" matches the requested behavior.
-- Multi-winner contests, ties.
-- Photo proof attachments.
-- Editing past entries (admins can delete + re-enter).
+- Push notifications / SMS to captains who are stalled.
+- Editable threshold for "stalled" (hard-coded 30 min for v1).
+- Per-hole heatmap of activity (could come later — for now the team-level list is enough to act on).
+- Backfill of historical redemptions (the log starts empty).
