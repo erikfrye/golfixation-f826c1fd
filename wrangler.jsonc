@@ -3,10 +3,5 @@
   "name": "golfixation",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "src/server.ts",
-  "vars": {
-    "SUPABASE_URL": "PLACEHOLDER",
-    "SUPABASE_PUBLISHABLE_KEY": "PLACEHOLDER",
-    "SUPABASE_SERVICE_ROLE_KEY": "PLACEHOLDER"
-  }
+  "main": "src/server.ts"
 }
