@@ -250,6 +250,8 @@ The `wrangler.jsonc` configures the Worker entry point at `src/server.ts` with `
 
 ---
 
+.
+
 <p align="center">
   Built with <a href="https://lovable.dev">Lovable</a> · Powered by <a href="https://tanstack.com/start">TanStack Start</a> + <a href="https://supabase.com">Supabase</a>
 </p>
