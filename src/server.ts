@@ -3,6 +3,21 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
+type CloudflareEnv = {
+  SUPABASE_URL?: string;
+  SUPABASE_PUBLISHABLE_KEY?: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+  [key: string]: string | undefined;
+};
+
+// Cloudflare Workers don't populate process.env from bindings automatically.
+// This shim copies Worker env vars into process.env so SSR code can read them.
+function applyCloudflareEnv(env: CloudflareEnv) {
+  if (env.SUPABASE_URL) process.env.SUPABASE_URL = env.SUPABASE_URL;
+  if (env.SUPABASE_PUBLISHABLE_KEY) process.env.SUPABASE_PUBLISHABLE_KEY = env.SUPABASE_PUBLISHABLE_KEY;
+  if (env.SUPABASE_SERVICE_ROLE_KEY) process.env.SUPABASE_SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+}
+
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
@@ -68,6 +83,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    applyCloudflareEnv(env as CloudflareEnv);
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
