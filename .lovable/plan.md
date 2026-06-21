@@ -1,60 +1,54 @@
-## Live Ops Dashboard
+# Remove `.env` from the repo
 
-A single screen per active tournament that surfaces four real-time health signals so admins can spot stalled rounds, edit storms, and code abuse without digging through pages.
+## Important context first
 
-### Where it lives
+On Lovable Cloud, `.env` is auto-managed. Even if we delete it and gitignore it, the next build on Lovable will **recreate it** with the same values. So this step only has lasting effect once you actually move the project off Lovable's managed build (e.g. the Netlify cutover we discussed). Doing it now is fine as prep, but expect to see `.env` reappear on Lovable until then.
 
-New route: `src/routes/admin.tournaments.$id_.liveops.tsx` (sibling to the existing `_.audit` and `_.teams` admin sub-pages). A new "Live ops" button on the admin tournament edit page links to it, alongside Score history and Manage teams.
+Also worth repeating: the values currently in `.env` (project URL, project ID, publishable/anon key) are **not secrets** — they're designed to ship in the client bundle. Removing them from git is hygiene, not a security fix.
 
-### The four panels
+## File changes
 
-1. **Teams not yet scoring** — teams in the tournament with zero rows in `hole_scores`. Shows team name + captain email + assigned start hole (shotgun) so admins can chase them down.
-2. **Stalled holes (no submission in 30+ min)** — for every `(team_id, hole_number)` pair the team is "currently on" (their next un-scored hole given their start_hole), compute time since the team's most recent `hole_scores.updated_at`. Flag any team whose last activity was 30+ minutes ago, or who started 30+ min ago and has no scores at all. Listed as team → hole-they're-stuck-on → minutes idle.
-3. **Late-edit count (today)** — count of `hole_score_audit` rows where `action='update'` AND `changed_at::date = today (tournament local)`. Show the count plus the 10 most recent edits (team, hole, old→new strokes, who, when, reason).
-4. **Override-code redemptions today** — count of redemptions recorded today for this tournament's code. Requires a new `override_code_redemptions` table since redemptions aren't logged anywhere today.
-
-### Data model change
-
-New table for #4:
-
+### 1. `.gitignore` — add an `# Environment` section
+Append:
 ```
-override_code_redemptions
-- id uuid pk
-- tournament_id uuid fk → tournaments (cascade)
-- captain_email text (lowercased)
-- team_id uuid fk → teams (set null) — resolved at redeem time when matchable
-- success boolean — true on issued magic link, false on bad-email/bad-code
-- failure_reason text nullable
-- redeemed_at timestamptz default now()
-- ip text nullable, user_agent text nullable
+# Environment
+.env
+.env.local
+.env.*.local
+```
+Keep `.env.example` trackable (we'll add one in step 3).
+
+### 2. `.env` — remove from the repo
+Delete the file with `rm .env` (Lovable will regenerate it locally on next build; the deletion from git history is what matters).
+
+### 3. `.env.example` — add a tracked template
+New file at repo root, no real values:
+```
+# Supabase (publishable values — safe to commit, shown here for setup reference)
+SUPABASE_URL="https://<your-project-ref>.supabase.co"
+SUPABASE_PROJECT_ID="<your-project-ref>"
+SUPABASE_PUBLISHABLE_KEY="<your-anon-key>"
+VITE_SUPABASE_URL="https://<your-project-ref>.supabase.co"
+VITE_SUPABASE_PROJECT_ID="<your-project-ref>"
+VITE_SUPABASE_PUBLISHABLE_KEY="<your-anon-key>"
 ```
 
-Indexes: `(tournament_id, redeemed_at desc)`. RLS: admins SELECT, service_role ALL; no anon/authenticated access. Insert happens inside the existing service-role `redeemOverrideCodeHandler` after looking up the tournament — we log both success and known failure cases (invalid code → no tournament_id so the row is skipped; wrong-email-for-valid-code → logged against that tournament).
+### 4. `README.md` — short setup note
+Add a "Local development" section pointing devs to copy `.env.example` → `.env` and fill in the values from their Lovable Cloud project (or self-hosted Supabase, post-cutover).
 
-### Server functions
+## What I am NOT changing
 
-New `src/lib/liveops.functions.ts`, all admin-only (verify `is_admin(auth.uid())` inside each handler, same pattern as other admin functions):
+- `src/integrations/supabase/client.ts` — already reads from `import.meta.env.VITE_*`, no change needed.
+- `src/integrations/supabase/client.server.ts` — already reads from `process.env.*`, no change needed.
+- No key rotation (you picked option 2, not option 3). The anon key in git history stays valid; that's fine because it's a publishable key.
 
-- `adminLiveOpsSummary({ tournamentId })` → returns `{ teamsNotScoring: TeamMini[], stalledTeams: StalledTeam[], lateEditCountToday, recentLateEdits: AuditRow[], redemptionsToday, recentRedemptions: RedemptionRow[] }`. One round-trip; all four panels render off it.
+## Git history caveat
 
-The "currently on" hole for a team is computed as: starting from `start_hole`, walk forward through hole numbers (wrapping at `num_holes`) and return the first hole the team has no `hole_scores` row for. If all 18 are scored, the team is done and excluded from #2.
+`git rm` only removes the file from the current commit. The old `.env` is still reachable in prior commits on GitHub. Because the values are publishable, that's not a security problem. If you still want them scrubbed from history, that's a separate operation (BFG / `git filter-repo`) that has to run on your local clone — Lovable can't rewrite the remote's history for you. Tell me if you want instructions for that as a follow-up.
 
-`captain.functions.ts.redeemOverrideCodeHandler` gets an insert into `override_code_redemptions` at the end (success path) and in the two `throw new Error` branches (failure paths) — failure path needs to look up the tournament by code first (already does), and skip logging when code itself is invalid (we don't know which tournament to attribute to).
+## After approval, in one batch
 
-### UI
-
-`admin.tournaments.$id_.liveops.tsx`:
-- Page header: tournament name + "Live" pulse + back link to the edit page.
-- 4-card responsive grid (1 col mobile, 2 col tablet, 4 col desktop) showing big-number counts.
-- Below: two columns of detail panels — left "Teams to chase" (combines #1 + #2 list), right "Activity" (late edits + redemptions stacked).
-- Auto-refresh: `useQuery` with `refetchInterval: 30_000` on the summary fn. Plus a Supabase Realtime subscription to `hole_scores` and `hole_score_audit` filtered by `tournament_id` that triggers `queryClient.invalidateQueries` so big changes show up immediately.
-- Empty states for each panel ("All teams are scoring", "No stalled holes", "No edits today", "No redemptions today").
-
-Link from `admin.tournaments.$id.tsx` header: new "Live ops" button next to Score history and Manage teams, visible only when `status === 'active'` (and faded/disabled for draft/completed tournaments).
-
-### Out of scope (v1)
-
-- Push notifications / SMS to captains who are stalled.
-- Editable threshold for "stalled" (hard-coded 30 min for v1).
-- Per-hole heatmap of activity (could come later — for now the team-level list is enough to act on).
-- Backfill of historical redemptions (the log starts empty).
+- `rm .env`
+- patch `.gitignore` (add Environment section)
+- create `.env.example`
+- patch `README.md` (Local development note)
