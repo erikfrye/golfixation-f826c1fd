@@ -55,9 +55,11 @@ bun install
 
 # 3. Environment variables
 # The project uses VITE_ prefixed variables for the Supabase client.
-# In Lovable Cloud these are injected automatically. For local dev,
-# copy .env (already present in Lovable projects):
-cp .env .env.local   # edit if you need custom values
+# `.env` is gitignored. On Lovable Cloud it is generated automatically at
+# build time. For local dev outside Lovable, copy the template and fill in
+# values from your Lovable Cloud project (Cloud → Settings) or your
+# self-hosted Supabase instance:
+cp .env.example .env
 ```
 
 ### Required Environment Variables
