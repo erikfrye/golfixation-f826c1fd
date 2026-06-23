@@ -5,6 +5,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { redeemOverrideCode } from "@/lib/captain.functions";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -65,9 +70,12 @@ function CaptainOtpForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const navigate = useNavigate();
 
-  const sendLink = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const sendLink = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setError(null);
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
@@ -85,26 +93,91 @@ function CaptainOtpForm() {
     setSent(true);
   };
 
+  const verifyCode = async (token: string) => {
+    setError(null);
+    setVerifying(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token,
+      type: "email",
+    });
+    setVerifying(false);
+    if (error) {
+      setError(error.message);
+      setCode("");
+      return;
+    }
+    navigate({ to: "/captain" });
+  };
+
+  const onSubmitCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.length === 6) void verifyCode(code);
+  };
+
   if (sent) {
     return (
-      <div className="space-y-3">
+      <form onSubmit={onSubmitCode} className="space-y-4">
         <p className="text-sm text-foreground">
-          Check <span className="font-medium">{email}</span> for a sign-in link.
+          We emailed a 6-digit code to{" "}
+          <span className="font-medium">{email}</span>.
         </p>
         <p className="text-xs text-muted-foreground">
-          Tap the link in the email to open your captain dashboard.
+          Enter the code below, or tap the magic link in the email if you're on
+          a desktop browser.
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            setSent(false);
-            setError(null);
-          }}
-          className="w-full text-xs text-muted-foreground hover:text-foreground"
-        >
-          ← Use a different email
-        </button>
-      </div>
+        <div className="flex justify-center">
+          <InputOTP
+            maxLength={6}
+            value={code}
+            onChange={(v) => {
+              setCode(v);
+              setError(null);
+              if (v.length === 6) void verifyCode(v);
+            }}
+            autoFocus
+            disabled={verifying}
+          >
+            <InputOTPGroup>
+              <InputOTPSlot index={0} />
+              <InputOTPSlot index={1} />
+              <InputOTPSlot index={2} />
+              <InputOTPSlot index={3} />
+              <InputOTPSlot index={4} />
+              <InputOTPSlot index={5} />
+            </InputOTPGroup>
+          </InputOTP>
+        </div>
+        {error && (
+          <p className="text-center text-xs text-destructive">{error}</p>
+        )}
+        {verifying && (
+          <p className="text-center text-xs text-muted-foreground">
+            Signing in…
+          </p>
+        )}
+        <div className="flex items-center justify-between text-xs">
+          <button
+            type="button"
+            onClick={() => {
+              setSent(false);
+              setCode("");
+              setError(null);
+            }}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            ← Use a different email
+          </button>
+          <button
+            type="button"
+            onClick={() => sendLink()}
+            disabled={loading}
+            className="text-primary hover:underline disabled:opacity-60"
+          >
+            {loading ? "Resending…" : "Resend code"}
+          </button>
+        </div>
+      </form>
     );
   }
 
@@ -126,7 +199,7 @@ function CaptainOtpForm() {
         disabled={loading}
         className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
       >
-        {loading ? "Sending…" : "Email me a sign-in link"}
+        {loading ? "Sending…" : "Email me a code"}
       </button>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </form>
