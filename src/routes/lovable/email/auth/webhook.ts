@@ -68,7 +68,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           })
           payload = verified.payload
           run_id = payload.run_id
-        } catch (error) {
+        } catch (error: any) {
           if (error instanceof WebhookError) {
             switch (error.code) {
               case 'invalid_signature':
