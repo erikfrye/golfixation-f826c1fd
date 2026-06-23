@@ -21,6 +21,8 @@ import { Route as CaptainTeamTeamIdRouteImport } from './routes/captain.team.$te
 import { Route as AdminTournamentsNewRouteImport } from './routes/admin.tournaments.new'
 import { Route as AdminTournamentsIdRouteImport } from './routes/admin.tournaments.$id'
 import { Route as CaptainTeamTeamIdIndexRouteImport } from './routes/captain.team.$teamId.index'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as AdminTournamentsIdTeamsRouteImport } from './routes/admin.tournaments.$id_.teams'
 import { Route as AdminTournamentsIdLiveopsRouteImport } from './routes/admin.tournaments.$id_.liveops'
 import { Route as AdminTournamentsIdAuditRouteImport } from './routes/admin.tournaments.$id_.audit'
@@ -85,6 +87,16 @@ const CaptainTeamTeamIdIndexRoute = CaptainTeamTeamIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => CaptainTeamTeamIdRoute,
 } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminTournamentsIdTeamsRoute = AdminTournamentsIdTeamsRouteImport.update({
   id: '/tournaments/$id_/teams',
   path: '/tournaments/$id/teams',
@@ -117,6 +129,8 @@ export interface FileRoutesByFullPath {
   '/admin/tournaments/$id/audit': typeof AdminTournamentsIdAuditRoute
   '/admin/tournaments/$id/liveops': typeof AdminTournamentsIdLiveopsRoute
   '/admin/tournaments/$id/teams': typeof AdminTournamentsIdTeamsRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/captain/team/$teamId/': typeof CaptainTeamTeamIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -131,6 +145,8 @@ export interface FileRoutesByTo {
   '/admin/tournaments/$id/audit': typeof AdminTournamentsIdAuditRoute
   '/admin/tournaments/$id/liveops': typeof AdminTournamentsIdLiveopsRoute
   '/admin/tournaments/$id/teams': typeof AdminTournamentsIdTeamsRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/captain/team/$teamId': typeof CaptainTeamTeamIdIndexRoute
 }
 export interface FileRoutesById {
@@ -149,6 +165,8 @@ export interface FileRoutesById {
   '/admin/tournaments/$id_/audit': typeof AdminTournamentsIdAuditRoute
   '/admin/tournaments/$id_/liveops': typeof AdminTournamentsIdLiveopsRoute
   '/admin/tournaments/$id_/teams': typeof AdminTournamentsIdTeamsRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/captain/team/$teamId/': typeof CaptainTeamTeamIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -168,6 +186,8 @@ export interface FileRouteTypes {
     | '/admin/tournaments/$id/audit'
     | '/admin/tournaments/$id/liveops'
     | '/admin/tournaments/$id/teams'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/captain/team/$teamId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -182,6 +202,8 @@ export interface FileRouteTypes {
     | '/admin/tournaments/$id/audit'
     | '/admin/tournaments/$id/liveops'
     | '/admin/tournaments/$id/teams'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/captain/team/$teamId'
   id:
     | '__root__'
@@ -199,6 +221,8 @@ export interface FileRouteTypes {
     | '/admin/tournaments/$id_/audit'
     | '/admin/tournaments/$id_/liveops'
     | '/admin/tournaments/$id_/teams'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/captain/team/$teamId/'
   fileRoutesById: FileRoutesById
 }
@@ -209,6 +233,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   TournamentIdRoute: typeof TournamentIdRoute
   TournamentsPastRoute: typeof TournamentsPastRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -297,6 +323,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CaptainTeamTeamIdIndexRouteImport
       parentRoute: typeof CaptainTeamTeamIdRoute
     }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/tournaments/$id_/teams': {
       id: '/admin/tournaments/$id_/teams'
       path: '/tournaments/$id/teams'
@@ -372,6 +412,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   TournamentIdRoute: TournamentIdRoute,
   TournamentsPastRoute: TournamentsPastRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
