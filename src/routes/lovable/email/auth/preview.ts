@@ -1,20 +1,24 @@
 import * as React from 'react'
-import { render } from '@react-email/components'
+import type { ComponentType } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { SignupEmail } from '@/lib/email-templates/signup'
-import { InviteEmail } from '@/lib/email-templates/invite'
-import { MagicLinkEmail } from '@/lib/email-templates/magic-link'
-import { RecoveryEmail } from '@/lib/email-templates/recovery'
-import { EmailChangeEmail } from '@/lib/email-templates/email-change'
-import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
-const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
-  signup: SignupEmail,
-  invite: InviteEmail,
-  magiclink: MagicLinkEmail,
-  recovery: RecoveryEmail,
-  email_change: EmailChangeEmail,
-  reauthentication: ReauthenticationEmail,
+async function getEmailTemplate(type: string): Promise<ComponentType<any> | null> {
+  switch (type) {
+    case 'signup':
+      return (await import('@/lib/email-templates/signup')).SignupEmail
+    case 'invite':
+      return (await import('@/lib/email-templates/invite')).InviteEmail
+    case 'magiclink':
+      return (await import('@/lib/email-templates/magic-link')).MagicLinkEmail
+    case 'recovery':
+      return (await import('@/lib/email-templates/recovery')).RecoveryEmail
+    case 'email_change':
+      return (await import('@/lib/email-templates/email-change')).EmailChangeEmail
+    case 'reauthentication':
+      return (await import('@/lib/email-templates/reauthentication')).ReauthenticationEmail
+    default:
+      return null
+  }
 }
 
 // Configuration
@@ -91,7 +95,7 @@ export const Route = createFileRoute("/lovable/email/auth/preview")({
           )
         }
 
-        const EmailTemplate = EMAIL_TEMPLATES[type]
+        const EmailTemplate = await getEmailTemplate(type)
 
         if (!EmailTemplate) {
           return Response.json(
@@ -101,6 +105,7 @@ export const Route = createFileRoute("/lovable/email/auth/preview")({
         }
 
         const sampleData = SAMPLE_DATA[type] || {}
+        const { render } = await import('@react-email/render')
         const html = await render(React.createElement(EmailTemplate, sampleData))
 
         return new Response(html, {

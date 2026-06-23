@@ -1,15 +1,9 @@
 import * as React from 'react'
-import { render } from '@react-email/components'
+import type { ComponentType } from 'react'
 import { parseEmailWebhookPayload } from '@lovable.dev/email-js'
 import { WebhookError, verifyWebhookRequest } from '@lovable.dev/webhooks-js'
 import { createClient } from '@supabase/supabase-js'
 import { createFileRoute } from '@tanstack/react-router'
-import { SignupEmail } from '@/lib/email-templates/signup'
-import { InviteEmail } from '@/lib/email-templates/invite'
-import { MagicLinkEmail } from '@/lib/email-templates/magic-link'
-import { RecoveryEmail } from '@/lib/email-templates/recovery'
-import { EmailChangeEmail } from '@/lib/email-templates/email-change'
-import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 const EMAIL_SUBJECTS: Record<string, string> = {
   signup: 'Confirm your email',
@@ -20,14 +14,23 @@ const EMAIL_SUBJECTS: Record<string, string> = {
   reauthentication: 'Your verification code',
 }
 
-// Template mapping
-const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
-  signup: SignupEmail,
-  invite: InviteEmail,
-  magiclink: MagicLinkEmail,
-  recovery: RecoveryEmail,
-  email_change: EmailChangeEmail,
-  reauthentication: ReauthenticationEmail,
+async function getEmailTemplate(emailType: string): Promise<ComponentType<any> | null> {
+  switch (emailType) {
+    case 'signup':
+      return (await import('@/lib/email-templates/signup')).SignupEmail
+    case 'invite':
+      return (await import('@/lib/email-templates/invite')).InviteEmail
+    case 'magiclink':
+      return (await import('@/lib/email-templates/magic-link')).MagicLinkEmail
+    case 'recovery':
+      return (await import('@/lib/email-templates/recovery')).RecoveryEmail
+    case 'email_change':
+      return (await import('@/lib/email-templates/email-change')).EmailChangeEmail
+    case 'reauthentication':
+      return (await import('@/lib/email-templates/reauthentication')).ReauthenticationEmail
+    default:
+      return null
+  }
 }
 
 // Configuration
@@ -122,7 +125,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           run_id,
         })
 
-        const EmailTemplate = EMAIL_TEMPLATES[emailType]
+        const EmailTemplate = await getEmailTemplate(emailType)
         if (!EmailTemplate) {
           console.error('Unknown email type', { emailType, run_id })
           return Response.json(
@@ -144,6 +147,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         }
 
         // Render React Email to HTML and plain text
+        const { render } = await import('@react-email/render')
         const element = React.createElement(EmailTemplate, templateProps)
         const html = await render(element)
         const text = await render(element, { plainText: true })
