@@ -1,54 +1,26 @@
-# Remove `.env` from the repo
+# Fix: Site not loading (preview + published)
 
-## Important context first
+## Root cause
 
-On Lovable Cloud, `.env` is auto-managed. Even if we delete it and gitignore it, the next build on Lovable will **recreate it** with the same values. So this step only has lasting effect once you actually move the project off Lovable's managed build (e.g. the Netlify cutover we discussed). Doing it now is fine as prep, but expect to see `.env` reappear on Lovable until then.
+The browser is throwing:
 
-Also worth repeating: the values currently in `.env` (project URL, project ID, publishable/anon key) are **not secrets** — they're designed to ship in the client bundle. Removing them from git is hygiene, not a security fix.
+> Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
 
-## File changes
+There is **no `.env` file** in the project (only `.env.example`). The Supabase client reads `import.meta.env.VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY`, which Vite inlines at build time. With no `.env` present, those values are `undefined` in both the preview bundle and the published bundle, so the first component that touches `supabase` (`AuthSync` in `__root.tsx`) throws — bubbling to the root error boundary and showing "This page didn't load". The Lovable Cloud backend itself is healthy; this is a missing managed env-file problem, not a code bug.
 
-### 1. `.gitignore` — add an `# Environment` section
-Append:
-```
-# Environment
-.env
-.env.local
-.env.*.local
-```
-Keep `.env.example` trackable (we'll add one in step 3).
+The earlier React Email / `entities` work is unrelated to this current failure.
 
-### 2. `.env` — remove from the repo
-Delete the file with `rm .env` (Lovable will regenerate it locally on next build; the deletion from git history is what matters).
+## Plan
 
-### 3. `.env.example` — add a tracked template
-New file at repo root, no real values:
-```
-# Supabase (publishable values — safe to commit, shown here for setup reference)
-SUPABASE_URL="https://<your-project-ref>.supabase.co"
-SUPABASE_PROJECT_ID="<your-project-ref>"
-SUPABASE_PUBLISHABLE_KEY="<your-anon-key>"
-VITE_SUPABASE_URL="https://<your-project-ref>.supabase.co"
-VITE_SUPABASE_PROJECT_ID="<your-project-ref>"
-VITE_SUPABASE_PUBLISHABLE_KEY="<your-anon-key>"
-```
+1. **Reconnect Lovable Cloud** so the managed `.env` is regenerated with `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`. You'll do this in the UI (Cloud panel → reconnect/refresh). I'll guide you.
+2. **Restart the dev sandbox** so Vite picks up the new `.env`, then verify the preview `/` loads with no console error.
+3. **Re-publish** so the production bundle is rebuilt with the env values inlined. The current live bundle was built without them and will stay broken until a new publish.
+4. **Verify**: load preview + published URL, confirm no "Missing Supabase environment variable" error, confirm OTP email send still works end-to-end.
 
-### 4. `README.md` — short setup note
-Add a "Local development" section pointing devs to copy `.env.example` → `.env` and fill in the values from their Lovable Cloud project (or self-hosted Supabase, post-cutover).
+## Out of scope (leave alone)
 
-## What I am NOT changing
+- Email templates, `entities` aliasing, `vite.config.ts` aliases, server.ts wrapper — all unrelated to the current failure. Touching them risks regressions.
 
-- `src/integrations/supabase/client.ts` — already reads from `import.meta.env.VITE_*`, no change needed.
-- `src/integrations/supabase/client.server.ts` — already reads from `process.env.*`, no change needed.
-- No key rotation (you picked option 2, not option 3). The anon key in git history stays valid; that's fine because it's a publishable key.
+## If reconnecting doesn't regenerate `.env`
 
-## Git history caveat
-
-`git rm` only removes the file from the current commit. The old `.env` is still reachable in prior commits on GitHub. Because the values are publishable, that's not a security problem. If you still want them scrubbed from history, that's a separate operation (BFG / `git filter-repo`) that has to run on your local clone — Lovable can't rewrite the remote's history for you. Tell me if you want instructions for that as a follow-up.
-
-## After approval, in one batch
-
-- `rm .env`
-- patch `.gitignore` (add Environment section)
-- create `.env.example`
-- patch `README.md` (Local development note)
+Fallback: ask support to refresh the Cloud integration, or re-link the project to its Cloud backend from project settings. Do **not** hand-write `.env` with guessed values.
