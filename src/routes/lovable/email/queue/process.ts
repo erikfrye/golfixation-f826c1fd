@@ -69,9 +69,20 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
         if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
-          console.error('Missing required environment variables')
+          console.error('Missing required environment variables', {
+            hasApiKey: Boolean(apiKey),
+            hasSupabaseUrl: Boolean(supabaseUrl),
+            hasServiceKey: Boolean(supabaseServiceKey),
+          })
           return Response.json(
-            { error: 'Server configuration error' },
+            {
+              error: 'Server configuration error',
+              missing: {
+                LOVABLE_API_KEY: !apiKey,
+                VITE_SUPABASE_URL: !supabaseUrl,
+                SUPABASE_SERVICE_ROLE_KEY: !supabaseServiceKey,
+              },
+            },
             { status: 500 }
           )
         }
