@@ -65,7 +65,7 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
     handlers: {
       POST: async ({ request }) => {
         const apiKey = process.env.LOVABLE_API_KEY
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
         if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
@@ -79,7 +79,7 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
               error: 'Server configuration error',
               missing: {
                 LOVABLE_API_KEY: !apiKey,
-                VITE_SUPABASE_URL: !supabaseUrl,
+                SUPABASE_URL: !supabaseUrl,
                 SUPABASE_SERVICE_ROLE_KEY: !supabaseServiceKey,
               },
             },
