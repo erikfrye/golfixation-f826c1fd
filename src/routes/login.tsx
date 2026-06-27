@@ -93,6 +93,8 @@ function CaptainOtpForm() {
     setSent(true);
   };
 
+  const OTP_LENGTH = 8;
+
   const verifyCode = async (token: string) => {
     setError(null);
     setVerifying(true);
@@ -112,14 +114,14 @@ function CaptainOtpForm() {
 
   const onSubmitCode = (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.length === 6) void verifyCode(code);
+    if (code.length === OTP_LENGTH) void verifyCode(code);
   };
 
   if (sent) {
     return (
       <form onSubmit={onSubmitCode} className="space-y-4">
         <p className="text-sm text-foreground">
-          We emailed a 6-digit code to{" "}
+          We emailed a {OTP_LENGTH}-digit code to{" "}
           <span className="font-medium">{email}</span>.
         </p>
         <p className="text-xs text-muted-foreground">
@@ -128,12 +130,12 @@ function CaptainOtpForm() {
         </p>
         <div className="flex justify-center">
           <InputOTP
-            maxLength={6}
+            maxLength={OTP_LENGTH}
             value={code}
             onChange={(v) => {
               setCode(v);
               setError(null);
-              if (v.length === 6) void verifyCode(v);
+              if (v.length === OTP_LENGTH) void verifyCode(v);
             }}
             autoFocus
             disabled={verifying}
@@ -145,6 +147,8 @@ function CaptainOtpForm() {
               <InputOTPSlot index={3} />
               <InputOTPSlot index={4} />
               <InputOTPSlot index={5} />
+              <InputOTPSlot index={6} />
+              <InputOTPSlot index={7} />
             </InputOTPGroup>
           </InputOTP>
         </div>
