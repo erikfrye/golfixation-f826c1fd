@@ -29,7 +29,7 @@ export const MagicLinkEmail = ({
       <Container style={container}>
         <Heading style={h1}>Your login link</Heading>
         <Text style={text}>
-          Use the 6-digit code below to log in to {siteName}, or tap the button.
+          Use the code below to log in to {siteName}, or tap the button.
           The code and link expire shortly.
         </Text>
         {token ? (
