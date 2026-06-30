@@ -262,3 +262,49 @@
 .animate-row-flash-down { animation: row-flash-down 1400ms ease-out both; }
 .animate-row-flash-same { animation: row-flash-same 1400ms ease-out both; }
 .animate-cell-flash     { animation: cell-flash     1200ms ease-out both; border-radius: 0.375rem; }
+
+/* ---- Score celebration (captain birdie/eagle/ace) ---- */
+@keyframes bird-fly {
+  0%   { transform: translate(-30vw, -10px) rotate(-6deg); opacity: 0; }
+  10%  { opacity: 1; }
+  50%  { transform: translate(40vw, -60px) rotate(2deg); }
+  90%  { opacity: 1; }
+  100% { transform: translate(130vw, -10px) rotate(-3deg); opacity: 0; }
+}
+@keyframes bird-drop {
+  0%   { transform: translate(0, -20px) rotate(0deg); opacity: 0; }
+  20%  { opacity: 1; transform: translate(0, 0) rotate(10deg); }
+  60%  { transform: translate(10px, 30px) rotate(-12deg); }
+  100% { transform: translate(-10px, 80px) rotate(20deg); opacity: 0; }
+}
+@keyframes bird-wing-flap {
+  0%, 100% { transform: rotate(-8deg) scaleY(1); }
+  50%      { transform: rotate(14deg) scaleY(0.85); }
+}
+@keyframes confetti-burst {
+  0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--tx, 0), var(--ty, 0)) rotate(var(--rot, 360deg)); opacity: 0; }
+}
+@keyframes badge-pop {
+  0%   { transform: translate(-50%, 0) scale(0.6); opacity: 0; }
+  20%  { transform: translate(-50%, 0) scale(1.12); opacity: 1; }
+  35%  { transform: translate(-50%, 0) scale(0.96); }
+  50%  { transform: translate(-50%, 0) scale(1.04); }
+  80%  { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -16px) scale(0.96); opacity: 0; }
+}
+.animate-bird-fly  { animation-name: bird-fly;  animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1); animation-fill-mode: both; }
+.animate-bird-drop { animation-name: bird-drop; animation-timing-function: cubic-bezier(0.4, 0, 0.8, 1); animation-fill-mode: both; }
+.animate-bird-fly .bird-wing,
+.animate-bird-drop .bird-wing { animation: bird-wing-flap 220ms ease-in-out infinite; }
+.animate-confetti-burst { animation-name: confetti-burst; animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); animation-fill-mode: both; }
+.animate-badge-pop      { animation: badge-pop 1600ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bird-fly, .animate-bird-drop {
+    animation: backdrop-in 200ms ease-out both;
+  }
+  .animate-bird-fly .bird-wing, .animate-bird-drop .bird-wing { animation: none; }
+  .animate-confetti-burst { animation: none; opacity: 0; }
+  .animate-badge-pop { animation: backdrop-in 200ms ease-out both, backdrop-out 200ms ease-in 1200ms both; }
+}
