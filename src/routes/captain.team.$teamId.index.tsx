@@ -448,6 +448,13 @@ function TeamScoring() {
           )}
         </>
       )}
+      {celebration && (
+        <ScoreCelebration
+          tier={celebration}
+          muted={muted}
+          onDone={() => setCelebration(null)}
+        />
+      )}
     </main>
   );
 }
