@@ -784,7 +784,9 @@ function HoleCard({
     setReasonOpen(false);
     setValidationOpen(false);
     setValidationMessage(null);
-    onSaved();
+    const prevTier = existing ? tierForScore(existing.strokes, hole.par) : null;
+    const newTier = tierForScore(strokes, hole.par);
+    onSaved(newTier && newTier !== prevTier ? newTier : null);
   };
 
   const attemptSave = () => {
