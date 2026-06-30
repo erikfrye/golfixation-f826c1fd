@@ -722,7 +722,7 @@ function HoleCard({
   teeShotRestrictionActive: boolean;
   playersNeedingTeeShots: Player[];
   pendingStatus: "pending" | "failed" | null;
-  onSaved: () => void;
+  onSaved: (tier: CelebrationTier | null) => void;
 }) {
   const qc = useQueryClient();
   const [strokes, setStrokes] = useState<number>(existing?.strokes ?? hole.par);
