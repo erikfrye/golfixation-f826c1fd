@@ -379,7 +379,8 @@ function TeamScoring() {
                             : "pending"
                           : null
                       }
-                      onSaved={() => {
+                      onSaved={(tier) => {
+                        if (tier) setCelebration(tier);
                         if (nextHole) setCurrentHole(nextHole.hole_number);
                       }}
                     />
