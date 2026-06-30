@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, Minus, Plus, Check, ChevronRight, Grid3x3, X, HelpCircle } from "lucide-react";
+import { ChevronLeft, Minus, Plus, Check, ChevronRight, Grid3x3, X, HelpCircle, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,9 @@ import { useOfflineQueue } from "@/hooks/use-offline-queue";
 import { SyncStatusPill } from "@/components/captain/sync-status-pill";
 import { LiveIndicator } from "@/components/live-indicator";
 import { CaptainHoleContests } from "@/components/proximity/captain-hole-contests";
+import { ScoreCelebration } from "@/components/captain/score-celebration";
+import { tierForScore, type CelebrationTier } from "@/lib/score-celebration";
+import { useCelebrateMute } from "@/hooks/use-celebrate-mute";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
   validateSearch: (search: Record<string, unknown>) => ({
