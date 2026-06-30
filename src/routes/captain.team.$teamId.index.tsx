@@ -53,6 +53,8 @@ function TeamScoring() {
   const [currentHole, setCurrentHole] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [celebration, setCelebration] = useState<CelebrationTier | null>(null);
+  const { muted, toggle: toggleMute } = useCelebrateMute();
   const queryClient = useQueryClient();
 
   const teamQ = useQuery({
