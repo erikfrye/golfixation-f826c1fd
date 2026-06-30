@@ -287,6 +287,15 @@ function TeamScoring() {
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <SyncStatusPill teamId={team.id} />
                 <LiveIndicator lastUpdated={lastUpdated} />
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  aria-label={muted ? "Unmute celebration sounds" : "Mute celebration sounds"}
+                  title={muted ? "Sounds muted" : "Sounds on"}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                </button>
               </div>
             </div>
             <div className="rounded-md border border-border bg-card px-3 py-2 text-right">
