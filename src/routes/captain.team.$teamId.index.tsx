@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, Minus, Plus, Check, ChevronRight, Grid3x3, X, HelpCircle } from "lucide-react";
+import { ChevronLeft, Minus, Plus, Check, ChevronRight, Grid3x3, X, HelpCircle, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExitAnimation } from "@/hooks/use-exit-animation";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,9 @@ import { useOfflineQueue } from "@/hooks/use-offline-queue";
 import { SyncStatusPill } from "@/components/captain/sync-status-pill";
 import { LiveIndicator } from "@/components/live-indicator";
 import { CaptainHoleContests } from "@/components/proximity/captain-hole-contests";
+import { ScoreCelebration } from "@/components/captain/score-celebration";
+import { tierForScore, type CelebrationTier } from "@/lib/score-celebration";
+import { useCelebrateMute } from "@/hooks/use-celebrate-mute";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -50,6 +53,8 @@ function TeamScoring() {
   const [currentHole, setCurrentHole] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [celebration, setCelebration] = useState<CelebrationTier | null>(null);
+  const { muted, toggle: toggleMute } = useCelebrateMute();
   const queryClient = useQueryClient();
 
   const teamQ = useQuery({
@@ -282,6 +287,15 @@ function TeamScoring() {
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <SyncStatusPill teamId={team.id} />
                 <LiveIndicator lastUpdated={lastUpdated} />
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  aria-label={muted ? "Unmute celebration sounds" : "Mute celebration sounds"}
+                  title={muted ? "Sounds muted" : "Sounds on"}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                </button>
               </div>
             </div>
             <div className="rounded-md border border-border bg-card px-3 py-2 text-right">
@@ -365,7 +379,8 @@ function TeamScoring() {
                             : "pending"
                           : null
                       }
-                      onSaved={() => {
+                      onSaved={(tier) => {
+                        if (tier) setCelebration(tier);
                         if (nextHole) setCurrentHole(nextHole.hole_number);
                       }}
                     />
@@ -432,6 +447,13 @@ function TeamScoring() {
             />
           )}
         </>
+      )}
+      {celebration && (
+        <ScoreCelebration
+          tier={celebration}
+          muted={muted}
+          onDone={() => setCelebration(null)}
+        />
       )}
     </main>
   );
@@ -707,7 +729,7 @@ function HoleCard({
   teeShotRestrictionActive: boolean;
   playersNeedingTeeShots: Player[];
   pendingStatus: "pending" | "failed" | null;
-  onSaved: () => void;
+  onSaved: (tier: CelebrationTier | null) => void;
 }) {
   const qc = useQueryClient();
   const [strokes, setStrokes] = useState<number>(existing?.strokes ?? hole.par);
@@ -769,7 +791,9 @@ function HoleCard({
     setReasonOpen(false);
     setValidationOpen(false);
     setValidationMessage(null);
-    onSaved();
+    const prevTier = existing ? tierForScore(existing.strokes, hole.par) : null;
+    const newTier = tierForScore(strokes, hole.par);
+    onSaved(newTier && newTier !== prevTier ? newTier : null);
   };
 
   const attemptSave = () => {
