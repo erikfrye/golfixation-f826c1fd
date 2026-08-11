@@ -1,54 +1,38 @@
-## What we're building
+# Auto-provision captain accounts on override-code login
 
-When a captain saves a score in the hole entry sheet, compare strokes to par and trigger a short full-viewport overlay animation:
+## The problem
 
-| Diff vs par | Tier | Animation | Sound |
-| --- | --- | --- | --- |
-| Hole-in-one (strokes = 1) | `ace` | Large eagle silhouette streaks across with gold confetti + sparkle burst, "ACE!" badge | triumphant chord |
-| ≤ -2 (eagle / albatross) | `eagle` | Eagle glides across, medium confetti trail | bright chirp + whoosh |
-| -1 (birdie) | `birdie` | Small sparrow flutters across, light confetti puff | single chirp |
-| ≥ +1 (bogey or worse) | `oof` | Tiny cartoon bird "drops" / sad-trombone wobble at bottom corner, no confetti | soft "oof" |
-| Par | none | — | — |
+The override-code path calls the admin API to generate a magic-link token for the captain's email. That call only works for an email that already has an account — for a brand-new captain it fails, so the code appears "invalid" the very first time they try it. The email-code path works because it is explicitly allowed to create the user.
 
-Each animation is ~1.2–1.8s, pointer-events-none, dismissable by tap. Respects `prefers-reduced-motion` (replaces motion with a brief fade-in badge). Skipped on score *edits* where the diff hasn't changed (so editing a saved birdie's note doesn't re-trigger).
+Confirmed in the code: `redeemOverrideCodeHandler` in `src/lib/captain.functions.ts` goes straight to `generateLink({ type: "magiclink" })`, while `src/routes/login.tsx` uses `shouldCreateUser: true` for the email flow.
 
-## UX details
+## Is auto-creating accounts safe here?
 
-- Overlay renders in a portal at document body so it floats above the hole sheet/modal.
-- Bird is an inline SVG component (no asset pipeline, scales crisply, themeable via `currentColor`). Confetti is ~25 absolutely-positioned divs with randomized translate/rotate via CSS custom properties.
-- A small mute toggle (speaker icon) lives in the captain header next to the existing sync pill. State persisted in `localStorage` under `golfixation:celebrate-muted`. Default = unmuted.
-- Sounds: short royalty-free clips committed under `src/assets/sfx/` (chirp.mp3, whoosh.mp3, fanfare.mp3, oof.mp3). Played via a single shared `HTMLAudioElement` pool; muted if toggle off or if `prefers-reduced-motion`.
+Yes, with the current guardrails. The override flow already requires two things before anything is created:
+- a valid tournament override code, and
+- an email that the admin has already registered as a team captain on that tournament.
 
-## Tech approach
+So an account is only ever created for an email an admin already put in the system. We are not opening self-serve signup. Every attempt (success or failure) is still written to the redemption log.
 
-Pure CSS keyframes + a tiny React component — no new dependencies. Fits the existing animation patterns already in `src/styles.css` (modal-in, hole-slide, row-flash, etc.).
+Two deliberate choices:
+- Create the account only at redemption time, not when a team is imported. Importing 200 teams should not create 200 dormant accounts, and admins routinely fix typos in captain emails after import.
+- Mark the created account as email-confirmed. The admin vouched for the address, and the captain has no password to set.
 
-## Files
+## What changes
 
-**New**
-- `src/components/captain/score-celebration.tsx` — `<ScoreCelebration tier={...} onDone={...} />` portal component. Renders the bird SVG + confetti, manages timeout, plays audio.
-- `src/components/captain/bird-svg.tsx` — small/medium/large bird SVG variants.
-- `src/hooks/use-celebrate-mute.ts` — localStorage-backed mute toggle hook.
-- `src/lib/score-celebration.ts` — `tierForScore(strokes, par)` pure helper + unit-testable. Includes test file `src/lib/__tests__/score-celebration.test.ts`.
-- `src/assets/sfx/{chirp,whoosh,fanfare,oof}.mp3` — short SFX (~15-30KB each).
+`src/lib/captain.functions.ts` — inside `redeemOverrideCodeHandler`, after the team check passes and before generating the link:
+1. Look up the email in the auth users list.
+2. If absent, create the user with `admin.createUser({ email, email_confirm: true })`, tagging metadata so we know it came from an override redemption.
+3. If creation fails because the user already exists (race), continue.
+4. Then generate the magic-link token exactly as today.
 
-**Edited**
-- `src/styles.css` — add keyframes: `bird-fly-across`, `bird-fly-small`, `bird-drop`, `confetti-fall`, `sparkle-pop`, plus reduced-motion fallbacks.
-- `src/routes/captain.team.$teamId.index.tsx` — in the hole-entry sheet's save handler (around the `save()` function near line 760), after a successful save: compute tier from `strokes` vs `hole.par`; if non-null and the tier differs from any previously-saved tier for that hole, set local state `celebration` that renders `<ScoreCelebration>`.
-- `src/routes/captain.team.$teamId.tsx` (header) — add the mute speaker icon button next to the sync pill.
+Failures at this step get logged to `override_code_redemptions` with `failure_reason: "user_provision_failed"`, same shape as the existing failure branches.
 
-## Trigger logic (precise)
+No UI change, no schema change.
 
-In the hole sheet's save handler:
-```
-const prevTier = existing ? tierForScore(existing.strokes, hole.par) : null;
-const newTier  = tierForScore(strokes, hole.par);
-if (newTier && newTier !== prevTier) setCelebration(newTier);
-```
-This ensures an upgrade (par → birdie) celebrates, a fix (eagle → birdie) celebrates with the new tier, and unrelated edits (note change, same tier) don't re-fire.
+## Tests
 
-## Out of scope
-
-- No leaderboard-side animations (only the captain entering the score sees it).
-- No per-tournament toggle in admin — single global mute on the device.
-- No haptics (can add later if requested).
+`src/lib/__tests__/captain.functions.test.ts` — extend the admin mock with `createUser` / user-lookup stubs and add cases:
+- new email: user is created, then the token is returned
+- existing email: no create call, token returned
+- create fails: throws and writes a failure redemption row
