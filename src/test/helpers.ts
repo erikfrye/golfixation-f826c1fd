@@ -54,9 +54,14 @@ export function mockSupabaseAdmin() {
     error: null,
   }));
 
+  const createUser = vi.fn(async () => ({
+    data: { user: { id: "user_test" } },
+    error: null as { message: string } | null,
+  }));
+
   const admin = {
     from: vi.fn((table: string) => chain(table)),
-    auth: { admin: { generateLink } },
+    auth: { admin: { generateLink, createUser } },
     queue(table: string, ...results: Resolver[]) {
       const q = queues.get(table) ?? [];
       q.push(...results);
@@ -66,6 +71,7 @@ export function mockSupabaseAdmin() {
       return callLog.get(table) ?? [];
     },
     _generateLink: generateLink,
+    _createUser: createUser,
   };
   return admin;
 }
