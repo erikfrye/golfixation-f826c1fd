@@ -16,7 +16,7 @@ import { tierForScore, type CelebrationTier } from "@/lib/score-celebration";
 import { useCelebrateMute } from "@/hooks/use-celebrate-mute";
 
 export const Route = createFileRoute("/captain/team/$teamId/")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { from?: "admin" } => ({
     from: search.from === "admin" ? ("admin" as const) : undefined,
   }),
   component: TeamScoring,

@@ -18,7 +18,7 @@ export const Route = createFileRoute("/tournament/$id")({
       { name: "description", content: `Live leaderboard for tournament ${params.id}.` },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { teamId?: string } => ({
     teamId: typeof search.teamId === "string" ? search.teamId : undefined,
   }),
   component: TournamentPage,

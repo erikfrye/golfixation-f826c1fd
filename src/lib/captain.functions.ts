@@ -49,6 +49,25 @@ export async function redeemOverrideCodeHandler(admin: RedeemAdmin, data: Redeem
     throw new Error("Email is not registered as a captain for this tournament");
   }
 
+  // First-time captains have no auth account yet, and generateLink({type:"magiclink"})
+  // fails for unknown emails. The admin already vouched for this address by
+  // registering it as a team captain, so provision the account on demand.
+  const { error: createErr } = await admin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { provisioned_via: "override_code", tournament_id: tournament.id },
+  });
+  if (createErr && !/already|registered|exists/i.test(createErr.message ?? "")) {
+    await admin.from("override_code_redemptions").insert({
+      tournament_id: tournament.id,
+      team_id: team.id,
+      captain_email: email,
+      success: false,
+      failure_reason: "user_provision_failed",
+    });
+    throw new Error(createErr.message ?? "Could not create captain account");
+  }
+
   const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,
