@@ -1,15 +1,16 @@
-export type CelebrationTier = "ace" | "albatross" | "eagle" | "birdie" | "oof";
+export type CelebrationTier =
+  | "ace"
+  | "albatross"
+  | "eagle"
+  | "birdie"
+  | "par"
+  | "bogey"
+  | "double-bogey"
+  | "over";
 
 /**
  * Map a (strokes, par) pair to a celebration tier.
- * Returns null when no celebration should fire (e.g. par, or invalid input).
- *
- * - strokes === 1                 -> "ace"        (hole-in-one trumps tier)
- * - strokes - par <= -3           -> "albatross"
- * - strokes - par === -2          -> "eagle"
- * - strokes - par === -1          -> "birdie"
- * - strokes - par >=  1           -> "oof"        (bogey or worse)
- * - strokes === par               -> null
+ * Returns null only for invalid input.
  */
 export function tierForScore(strokes: number, par: number): CelebrationTier | null {
   if (!Number.isFinite(strokes) || !Number.isFinite(par)) return null;
@@ -19,14 +20,19 @@ export function tierForScore(strokes: number, par: number): CelebrationTier | nu
   if (diff <= -3) return "albatross";
   if (diff === -2) return "eagle";
   if (diff === -1) return "birdie";
-  if (diff >= 1) return "oof";
-  return null;
+  if (diff === 0) return "par";
+  if (diff === 1) return "bogey";
+  if (diff === 2) return "double-bogey";
+  return "over";
 }
 
 export const TIER_LABEL: Record<CelebrationTier, string> = {
-  ace: "ACE!",
-  albatross: "ALBATROSS",
-  eagle: "EAGLE",
-  birdie: "BIRDIE",
-  oof: "OOF",
+  ace: "Hole-In-One!",
+  albatross: "Albatross",
+  eagle: "Eagle",
+  birdie: "Birdie",
+  par: "Par",
+  bogey: "Bogey",
+  "double-bogey": "Double Bogey",
+  over: "Ouch",
 };
