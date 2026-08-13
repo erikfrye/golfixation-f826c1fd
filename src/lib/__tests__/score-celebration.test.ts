@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { tierForScore } from "../score-celebration";
 
 describe("tierForScore", () => {
-  it("returns null for par", () => {
-    expect(tierForScore(4, 4)).toBeNull();
-    expect(tierForScore(3, 3)).toBeNull();
+  it("returns 'par' for par", () => {
+    expect(tierForScore(4, 4)).toBe("par");
+    expect(tierForScore(3, 3)).toBe("par");
   });
 
   it("returns 'ace' for hole-in-one on a par > 1", () => {
@@ -28,9 +28,10 @@ describe("tierForScore", () => {
     expect(tierForScore(4, 5)).toBe("birdie");
   });
 
-  it("returns 'oof' for bogey or worse", () => {
-    expect(tierForScore(5, 4)).toBe("oof");
-    expect(tierForScore(8, 4)).toBe("oof");
+  it("returns bogey tiers for over par", () => {
+    expect(tierForScore(5, 4)).toBe("bogey");
+    expect(tierForScore(6, 4)).toBe("double-bogey");
+    expect(tierForScore(8, 4)).toBe("over");
   });
 
   it("returns null for invalid input", () => {

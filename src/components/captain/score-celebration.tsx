@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
-import { BirdSvg } from "./bird-svg";
 import { TIER_LABEL, type CelebrationTier } from "@/lib/score-celebration";
 
 type Props = {
@@ -9,52 +8,74 @@ type Props = {
   onDone: () => void;
 };
 
-const TIER_CONFIG: Record<
-  CelebrationTier,
-  {
-    durationMs: number;
-    confettiCount: number;
-    birdSize: number;
-    badgeClass: string;
-    confettiColors: string[];
-    drop?: boolean;
-  }
-> = {
+type Cfg = {
+  durationMs: number;
+  /** number of sunburst rays behind the word (0 = none) */
+  rays: number;
+  /** css color for rays */
+  rayColor: string;
+  /** text treatment class */
+  textClass: string;
+  /** gentle vs punchy entrance */
+  mood: "hype" | "calm" | "sad";
+};
+
+const TIER_CONFIG: Record<CelebrationTier, Cfg> = {
   ace: {
-    durationMs: 2200,
-    confettiCount: 60,
-    birdSize: 180,
-    badgeClass: "bg-amber-400 text-amber-950 ring-4 ring-amber-300/60",
-    confettiColors: ["#fbbf24", "#f59e0b", "#fde68a", "#ffffff", "#eab308"],
+    durationMs: 2400,
+    rays: 20,
+    rayColor: "#fde047",
+    textClass: "wii-text-gold",
+    mood: "hype",
   },
   albatross: {
-    durationMs: 1900,
-    confettiCount: 45,
-    birdSize: 150,
-    badgeClass: "bg-violet-500 text-white ring-4 ring-violet-300/50",
-    confettiColors: ["#a78bfa", "#8b5cf6", "#c4b5fd", "#fbbf24"],
+    durationMs: 2100,
+    rays: 18,
+    rayColor: "#fcd34d",
+    textClass: "wii-text-gold",
+    mood: "hype",
   },
   eagle: {
-    durationMs: 1700,
-    confettiCount: 35,
-    birdSize: 130,
-    badgeClass: "bg-primary text-primary-foreground ring-4 ring-primary/40",
-    confettiColors: ["#10b981", "#34d399", "#a7f3d0", "#fbbf24"],
+    durationMs: 2000,
+    rays: 16,
+    rayColor: "#facc15",
+    textClass: "wii-text-gold",
+    mood: "hype",
   },
   birdie: {
-    durationMs: 1400,
-    confettiCount: 20,
-    birdSize: 100,
-    badgeClass: "bg-primary text-primary-foreground ring-2 ring-primary/30",
-    confettiColors: ["#10b981", "#34d399", "#a7f3d0"],
+    durationMs: 1800,
+    rays: 14,
+    rayColor: "#fde047",
+    textClass: "wii-text-gold",
+    mood: "hype",
   },
-  oof: {
-    durationMs: 1100,
-    confettiCount: 0,
-    birdSize: 70,
-    badgeClass: "bg-muted text-muted-foreground ring-2 ring-border",
-    confettiColors: [],
-    drop: true,
+  par: {
+    durationMs: 1400,
+    rays: 0,
+    rayColor: "transparent",
+    textClass: "wii-text-white",
+    mood: "calm",
+  },
+  bogey: {
+    durationMs: 1500,
+    rays: 0,
+    rayColor: "transparent",
+    textClass: "wii-text-ice",
+    mood: "sad",
+  },
+  "double-bogey": {
+    durationMs: 1600,
+    rays: 0,
+    rayColor: "transparent",
+    textClass: "wii-text-ice",
+    mood: "sad",
+  },
+  over: {
+    durationMs: 1600,
+    rays: 0,
+    rayColor: "transparent",
+    textClass: "wii-text-ice",
+    mood: "sad",
   },
 };
 
@@ -113,13 +134,19 @@ function playSound(tier: CelebrationTier) {
       case "birdie":
         chirp(0, 1046, 0.16);
         break;
-      case "oof":
+      case "par":
+        chirp(0, 660, 0.14, "sine", 0.12);
+        break;
+      case "bogey":
+        drop(0, 260, 0.4);
+        break;
+      case "double-bogey":
+      case "over":
         drop(0, 220);
         break;
     }
 
-    // close once sounds finish to free resources
-    setTimeout(() => ctx.close().catch(() => {}), 1200);
+    setTimeout(() => ctx.close().catch(() => {}), 1400);
   } catch {
     // audio not available; silent fallback
   }
@@ -130,22 +157,16 @@ export function ScoreCelebration({ tier, muted, onDone }: Props) {
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
 
-  // Confetti pieces: pre-randomized once per mount so they don't reshuffle on re-render.
-  const pieces = useMemo(() => {
-    return Array.from({ length: cfg.confettiCount }, (_, i) => {
-      const angle = (Math.random() - 0.5) * 140; // degrees spread
-      const distance = 140 + Math.random() * 240; // px
-      const rad = (angle - 90) * (Math.PI / 180);
-      const tx = Math.cos(rad) * distance;
-      const ty = Math.sin(rad) * distance;
-      const rot = (Math.random() - 0.5) * 720;
-      const color = cfg.confettiColors[i % cfg.confettiColors.length] ?? "#fbbf24";
-      const delay = Math.random() * 120;
-      const dur = 900 + Math.random() * 500;
-      const size = 6 + Math.random() * 6;
-      return { tx, ty, rot, color, delay, dur, size, id: i };
-    });
-  }, [cfg]);
+  const rays = useMemo(
+    () =>
+      Array.from({ length: cfg.rays }, (_, i) => ({
+        id: i,
+        angle: (360 / Math.max(cfg.rays, 1)) * i + (i % 2 ? 4 : -4),
+        length: 46 + (i % 3) * 22,
+        delay: (i % 4) * 40,
+      })),
+    [cfg.rays],
+  );
 
   useEffect(() => {
     const prefersReduced =
@@ -158,57 +179,43 @@ export function ScoreCelebration({ tier, muted, onDone }: Props) {
 
   if (typeof document === "undefined") return null;
 
-  const birdAnimClass = cfg.drop ? "animate-bird-drop" : "animate-bird-fly";
+  const wordAnim =
+    cfg.mood === "hype" ? "animate-wii-pop" : cfg.mood === "calm" ? "animate-wii-soft" : "animate-wii-sag";
 
   return createPortal(
     <div
-      className="pointer-events-none fixed inset-0 z-[100] overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-[100] grid place-items-center overflow-hidden"
       aria-live="polite"
-      aria-label={`${TIER_LABEL[tier]} celebration`}
+      aria-label={`${TIER_LABEL[tier]} result`}
       onClick={() => doneRef.current()}
     >
-      {/* Badge */}
-      <div
-        className={`absolute left-1/2 top-[22%] -translate-x-1/2 rounded-full px-5 py-2 text-2xl font-extrabold tracking-widest shadow-xl animate-badge-pop ${cfg.badgeClass}`}
-      >
-        {TIER_LABEL[tier]}
-      </div>
+      <div className="relative">
+        {/* Sunburst rays */}
+        {rays.length > 0 && (
+          <div className="absolute left-1/2 top-1/2 h-0 w-0">
+            {rays.map((r) => (
+              <span
+                key={r.id}
+                className="absolute block origin-left rounded-full animate-wii-ray"
+                style={{
+                  width: r.length,
+                  height: 6,
+                  backgroundColor: cfg.rayColor,
+                  transform: `rotate(${r.angle}deg) translateX(78px)`,
+                  animationDelay: `${r.delay}ms`,
+                }}
+              />
+            ))}
+          </div>
+        )}
 
-      {/* Bird */}
-      <div
-        className={`absolute ${cfg.drop ? "right-6 top-[55%]" : "left-0 top-1/2"} ${birdAnimClass}`}
-        style={{
-          width: cfg.birdSize,
-          height: cfg.birdSize * (80 / 120),
-          color: cfg.drop ? "var(--muted-foreground)" : "var(--primary)",
-          animationDuration: `${cfg.durationMs}ms`,
-        }}
-      >
-        <BirdSvg className="h-full w-full drop-shadow-md" />
-      </div>
-
-      {/* Confetti */}
-      {pieces.length > 0 && (
-        <div className="absolute left-1/2 top-[28%] h-0 w-0">
-          {pieces.map((p) => (
-            <span
-              key={p.id}
-              className="absolute block animate-confetti-burst"
-              style={{
-                width: p.size,
-                height: p.size * 0.4,
-                backgroundColor: p.color,
-                borderRadius: 1,
-                ["--tx" as string]: `${p.tx}px`,
-                ["--ty" as string]: `${p.ty}px`,
-                ["--rot" as string]: `${p.rot}deg`,
-                animationDelay: `${p.delay}ms`,
-                animationDuration: `${p.dur}ms`,
-              }}
-            />
-          ))}
+        {/* The word */}
+        <div
+          className={`relative select-none whitespace-nowrap px-6 text-5xl font-black italic tracking-tight sm:text-7xl ${cfg.textClass} ${wordAnim}`}
+        >
+          {TIER_LABEL[tier]}
         </div>
-      )}
+      </div>
     </div>,
     document.body,
   );

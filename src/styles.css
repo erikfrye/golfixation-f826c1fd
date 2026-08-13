@@ -263,48 +263,81 @@
 .animate-row-flash-same { animation: row-flash-same 1400ms ease-out both; }
 .animate-cell-flash     { animation: cell-flash     1200ms ease-out both; border-radius: 0.375rem; }
 
-/* ---- Score celebration (captain birdie/eagle/ace) ---- */
-@keyframes bird-fly {
-  0%   { transform: translate(-30vw, -10px) rotate(-6deg); opacity: 0; }
-  10%  { opacity: 1; }
-  50%  { transform: translate(40vw, -60px) rotate(2deg); }
-  90%  { opacity: 1; }
-  100% { transform: translate(130vw, -10px) rotate(-3deg); opacity: 0; }
+/* ---- Score celebration (Wii Sports Resort style result word) ---- */
+@keyframes wii-pop {
+  0%   { transform: scale(0.2) rotate(-6deg); opacity: 0; }
+  18%  { transform: scale(1.25) rotate(2deg); opacity: 1; }
+  30%  { transform: scale(0.92) rotate(-1deg); }
+  42%  { transform: scale(1.06) rotate(0deg); }
+  55%  { transform: scale(1); }
+  80%  { transform: scale(1) translateY(0); opacity: 1; }
+  100% { transform: scale(1.08) translateY(-18px); opacity: 0; }
 }
-@keyframes bird-drop {
-  0%   { transform: translate(0, -20px) rotate(0deg); opacity: 0; }
-  20%  { opacity: 1; transform: translate(0, 0) rotate(10deg); }
-  60%  { transform: translate(10px, 30px) rotate(-12deg); }
-  100% { transform: translate(-10px, 80px) rotate(20deg); opacity: 0; }
+@keyframes wii-soft {
+  0%   { transform: scale(0.7); opacity: 0; }
+  25%  { transform: scale(1.05); opacity: 1; }
+  40%  { transform: scale(1); }
+  80%  { opacity: 1; }
+  100% { transform: scale(1) translateY(-10px); opacity: 0; }
 }
-@keyframes bird-wing-flap {
-  0%, 100% { transform: rotate(-8deg) scaleY(1); }
-  50%      { transform: rotate(14deg) scaleY(0.85); }
+@keyframes wii-sag {
+  0%   { transform: scale(0.8) translateY(-14px); opacity: 0; }
+  25%  { transform: scale(1.02) translateY(0); opacity: 1; }
+  40%  { transform: scale(1) translateY(2px); }
+  80%  { transform: translateY(6px); opacity: 1; }
+  100% { transform: translateY(26px) scale(0.96); opacity: 0; }
 }
-@keyframes confetti-burst {
-  0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-  100% { transform: translate(var(--tx, 0), var(--ty, 0)) rotate(var(--rot, 360deg)); opacity: 0; }
+@keyframes wii-ray {
+  0%   { opacity: 0; transform: rotate(var(--a, 0deg)) translateX(40px) scaleX(0.2); }
+  100% { opacity: 0; }
 }
-@keyframes badge-pop {
-  0%   { transform: translate(-50%, 0) scale(0.6); opacity: 0; }
-  20%  { transform: translate(-50%, 0) scale(1.12); opacity: 1; }
-  35%  { transform: translate(-50%, 0) scale(0.96); }
-  50%  { transform: translate(-50%, 0) scale(1.04); }
-  80%  { transform: translate(-50%, 0) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -16px) scale(0.96); opacity: 0; }
+@keyframes wii-ray-burst {
+  0%   { opacity: 0; scale: 0.25 0.5; }
+  20%  { opacity: 1; scale: 1 1; }
+  70%  { opacity: 0.9; }
+  100% { opacity: 0; scale: 1.15 0.4; }
 }
-.animate-bird-fly  { animation-name: bird-fly;  animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1); animation-fill-mode: both; }
-.animate-bird-drop { animation-name: bird-drop; animation-timing-function: cubic-bezier(0.4, 0, 0.8, 1); animation-fill-mode: both; }
-.animate-bird-fly .bird-wing,
-.animate-bird-drop .bird-wing { animation: bird-wing-flap 220ms ease-in-out infinite; }
-.animate-confetti-burst { animation-name: confetti-burst; animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); animation-fill-mode: both; }
-.animate-badge-pop      { animation: badge-pop 1600ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+.animate-wii-pop  { animation: wii-pop  1800ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-wii-soft { animation: wii-soft 1400ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-wii-sag  { animation: wii-sag  1600ms cubic-bezier(0.33, 1, 0.68, 1) both; }
+.animate-wii-ray  { animation: wii-ray-burst 1200ms ease-out both; }
+
+/* Chunky arcade-style lettering with layered outline + drop shadow */
+.wii-text-gold {
+  color: #ffd94a;
+  background: linear-gradient(180deg, #fff3b0 0%, #ffd54a 45%, #f0a500 55%, #ffe27a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 2px #7a3d00) drop-shadow(2px 3px 0 #5c2c00) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+}
+.wii-text-white {
+  color: #ffffff;
+  text-shadow:
+    0 0 2px #2f4858,
+    2px 2px 0 #2f4858,
+    -2px 2px 0 #2f4858,
+    2px -2px 0 #2f4858,
+    -2px -2px 0 #2f4858,
+    0 8px 16px rgba(0, 0, 0, 0.4);
+}
+.wii-text-ice {
+  color: #d8fbf3;
+  text-shadow:
+    0 0 2px #17255a,
+    2px 2px 0 #17255a,
+    -2px 2px 0 #17255a,
+    2px -2px 0 #17255a,
+    -2px -2px 0 #17255a,
+    0 8px 16px rgba(0, 0, 0, 0.4);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-bird-fly, .animate-bird-drop {
-    animation: backdrop-in 200ms ease-out both;
+  .animate-wii-pop,
+  .animate-wii-soft,
+  .animate-wii-sag {
+    animation: backdrop-in 200ms ease-out both, backdrop-out 250ms ease-in 900ms both;
   }
-  .animate-bird-fly .bird-wing, .animate-bird-drop .bird-wing { animation: none; }
-  .animate-confetti-burst { animation: none; opacity: 0; }
-  .animate-badge-pop { animation: backdrop-in 200ms ease-out both, backdrop-out 200ms ease-in 1200ms both; }
+  .animate-wii-ray { animation: none; opacity: 0; }
 }
