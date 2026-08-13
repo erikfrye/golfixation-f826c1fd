@@ -4,7 +4,6 @@ import { TIER_LABEL, type CelebrationTier } from "@/lib/score-celebration";
 
 type Props = {
   tier: CelebrationTier;
-  muted?: boolean;
   onDone: () => void;
 };
 
@@ -79,80 +78,7 @@ const TIER_CONFIG: Record<CelebrationTier, Cfg> = {
   },
 };
 
-function playSound(tier: CelebrationTier) {
-  try {
-    const AC: typeof AudioContext | undefined =
-      window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AC) return;
-    const ctx = new AC();
-    const now = ctx.currentTime;
-
-    const chirp = (start: number, freq: number, dur = 0.18, type: OscillatorType = "triangle", gain = 0.18) => {
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, now + start);
-      osc.frequency.exponentialRampToValueAtTime(freq * 1.6, now + start + dur);
-      g.gain.setValueAtTime(0, now + start);
-      g.gain.linearRampToValueAtTime(gain, now + start + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
-      osc.connect(g).connect(ctx.destination);
-      osc.start(now + start);
-      osc.stop(now + start + dur + 0.05);
-    };
-
-    const drop = (start: number, freq: number, dur = 0.5, gain = 0.16) => {
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(freq, now + start);
-      osc.frequency.exponentialRampToValueAtTime(freq * 0.35, now + start + dur);
-      g.gain.setValueAtTime(0, now + start);
-      g.gain.linearRampToValueAtTime(gain, now + start + 0.03);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
-      osc.connect(g).connect(ctx.destination);
-      osc.start(now + start);
-      osc.stop(now + start + dur + 0.05);
-    };
-
-    switch (tier) {
-      case "ace":
-        chirp(0, 880);
-        chirp(0.12, 1175);
-        chirp(0.24, 1568);
-        chirp(0.4, 1976, 0.4, "triangle", 0.22);
-        break;
-      case "albatross":
-        chirp(0, 988);
-        chirp(0.1, 1318);
-        chirp(0.22, 1760, 0.3);
-        break;
-      case "eagle":
-        chirp(0, 784);
-        chirp(0.12, 1175, 0.24);
-        break;
-      case "birdie":
-        chirp(0, 1046, 0.16);
-        break;
-      case "par":
-        chirp(0, 660, 0.14, "sine", 0.12);
-        break;
-      case "bogey":
-        drop(0, 260, 0.4);
-        break;
-      case "double-bogey":
-      case "over":
-        drop(0, 220);
-        break;
-    }
-
-    setTimeout(() => ctx.close().catch(() => {}), 1400);
-  } catch {
-    // audio not available; silent fallback
-  }
-}
-
-export function ScoreCelebration({ tier, muted, onDone }: Props) {
+export function ScoreCelebration({ tier, onDone }: Props) {
   const cfg = TIER_CONFIG[tier];
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
@@ -169,13 +95,9 @@ export function ScoreCelebration({ tier, muted, onDone }: Props) {
   );
 
   useEffect(() => {
-    const prefersReduced =
-      typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (!muted && !prefersReduced) playSound(tier);
-
     const t = setTimeout(() => doneRef.current(), cfg.durationMs);
     return () => clearTimeout(t);
-  }, [tier, muted, cfg.durationMs]);
+  }, [tier, cfg.durationMs]);
 
   if (typeof document === "undefined") return null;
 
