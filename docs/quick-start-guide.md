@@ -157,4 +157,5 @@ Use this checklist during your first tournament:
 - [ ] I understand how to enter strokes and submit each hole.
 - [ ] I know how to spot the sync status pill.
 - [ ] I know how to scroll back and edit a previous score.
+- [ ] I know how to record a proximity contest when one appears on a hole.
 - [ ] I know who to contact if my team is missing.
