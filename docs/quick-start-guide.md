@@ -6,45 +6,114 @@ Golfixation replaces paper scorecards with live, collaborative scoring for golf 
 
 ## For Team Captains
 
-### 1. Sign in
+### Step 1: Sign in
 
-- Open the Golfixation app and tap **Sign in**.
-- Choose one of the following ways to sign in:
-  - **Email code**: Enter the email address your tournament admin registered for your team. Check your email for an 8-digit code and enter it in the app.
-  - **Override code**: If your admin gave you an override code, enter it along with your registered email address.
+**What you need:** The email address your tournament admin registered for your team.
 
-### 2. Find your team
+1. Open the Golfixation app and tap **Sign in**.
+2. Choose how you want to sign in:
+   - **Email code** (recommended): Enter your registered email address, then check your email for an 8-digit code and type it into the app.
+   - **Override code**: If your admin gave you an override code, enter it along with your registered email address.
+3. You are now signed in and will see your captain dashboard.
 
-After signing in, you will see a list of teams you are registered to captain. Tap your team to open the scoring screen.
+> **Screenshot placeholder:** `docs/screenshots/captain-sign-in.png`
+> ![Captain sign-in screen showing email and override code options](screenshots/captain-sign-in.png)
+> *Figure 1: Sign in with your email or an override code.*
 
-### 3. Enter scores
+---
 
-- The scoring screen shows the current hole for your team.
-- Enter each player's strokes for that hole.
-- Tap **Submit** to save the score and move to the next hole.
-- The card will slide forward as you advance, so you can see which hole is active.
+### Step 2: Find your team
 
-### 4. Offline scoring
+After signing in, you will see a list of teams you are registered to captain.
 
-If you lose signal on the course, keep entering scores as normal. Golfixation stores them on your device and automatically syncs them when your connection returns. A small status pill shows whether your scores are synced or still pending.
+1. Look for your team name on the captain dashboard.
+2. Tap your team card to open the scoring screen.
+3. Only active tournaments appear here. Completed tournaments are hidden to keep the list clean.
 
-### Need help?
+> **Screenshot placeholder:** `docs/screenshots/captain-team-list.png`
+> ![Captain dashboard listing available teams](screenshots/captain-team-list.png)
+> *Figure 2: Tap your team to start scoring.*
 
-If you cannot see your team or your scores are not saving, contact your tournament admin and confirm the email address they have on file for you.
+---
+
+### Step 3: Enter scores
+
+The scoring screen shows the current hole for your team and the players on your roster.
+
+1. Enter each player's strokes for the hole shown at the top of the screen.
+2. Tap **Submit** to save the score.
+3. The hole card will slide to the left and the next hole will slide in, so you always know which hole is active.
+4. Repeat until your round is complete.
+
+> **Screenshot placeholder:** `docs/screenshots/captain-score-entry.png`
+> ![Score entry screen with player strokes and submit button](screenshots/captain-score-entry.png)
+> *Figure 3: Enter strokes for each player and tap Submit.*
+
+> **Callout:** Watch for the celebration flash when someone scores a Birdie, Eagle, or better — it's a fun way to confirm the score was recorded.
+
+---
+
+### Step 4: Check your sync status
+
+If you lose signal on the course, keep entering scores as normal. Golfixation stores them on your device and automatically syncs them when your connection returns.
+
+1. Look at the status pill near the top of the scoring screen.
+2. **Synced** means the score is saved to the server.
+3. **Pending** means the score is stored on your phone and will sync when signal returns.
+
+> **Screenshot placeholder:** `docs/screenshots/captain-sync-status.png`
+> ![Scoring screen showing synced and pending status pills](screenshots/captain-sync-status.png)
+> *Figure 4: The status pill tells you whether a score has reached the server.*
+
+---
+
+### Step 5: Edit a score if needed
+
+Made a mistake? You can fix a score after it has been submitted.
+
+1. Scroll back to the hole you need to change.
+2. Tap the score you want to edit.
+3. Enter the correct strokes and submit again.
+
+> **Screenshot placeholder:** `docs/screenshots/captain-edit-score.png`
+> ![Score entry screen with an editable previous hole highlighted](screenshots/captain-edit-score.png)
+> *Figure 5: Scroll back and tap any hole to correct a score.*
 
 ---
 
 ## For Spectators and Basic Users
 
-### 1. View the leaderboard
+### Step 1: View the leaderboard
 
-- Open the Golfixation home page.
-- Select the active tournament you want to follow.
-- The leaderboard updates automatically as captains enter scores.
+1. Open the Golfixation home page.
+2. Select the active tournament you want to follow.
+3. The leaderboard updates automatically as captains enter scores.
 
-### 2. Refresh if needed
+> **Screenshot placeholder:** `docs/screenshots/spectator-tournament-select.png`
+> ![Home page showing active tournament cards](screenshots/spectator-tournament-select.png)
+> *Figure 6: Tap an active tournament to open its leaderboard.*
 
-If the leaderboard looks out of date, pull down to refresh or wait a few seconds for the next live update.
+---
+
+### Step 2: Read the leaderboard
+
+1. Teams are ranked by total score relative to par.
+2. Tap any team to see hole-by-hole detail.
+3. The page refreshes live, so you do not need to pull down constantly.
+
+> **Screenshot placeholder:** `docs/screenshots/spectator-leaderboard.png`
+> ![Leaderboard showing team rankings and scores](screenshots/spectator-leaderboard.png)
+> *Figure 7: The leaderboard updates in real time as scores come in.*
+
+---
+
+### Step 3: Refresh if needed
+
+If the leaderboard looks out of date:
+
+1. Pull down on the page to refresh manually.
+2. Wait a few seconds for the next live update.
+3. Check that your device has a data connection.
 
 ---
 
@@ -56,3 +125,18 @@ If the leaderboard looks out of date, pull down to refresh or wait a few seconds
 | Team is not listed after signing in | Ask your admin to check that your email is attached to the correct team. |
 | Scores are not updating on the leaderboard | Check your connection and wait for the sync indicator to clear. |
 | App asks you to sign in again | Sign back in with the same email or override code. |
+| Score was entered for the wrong hole | Scroll back, tap the hole, and submit the correct score. |
+| Celebration text did not appear | The animation only triggers for Birdie, Eagle, or better scores. |
+
+---
+
+## Print Checklist
+
+Use this checklist during your first tournament:
+
+- [ ] I know which email address the admin used for my team.
+- [ ] I can sign in and see my team on the captain dashboard.
+- [ ] I understand how to enter strokes and submit each hole.
+- [ ] I know how to spot the sync status pill.
+- [ ] I know how to scroll back and edit a previous score.
+- [ ] I know who to contact if my team is missing.
