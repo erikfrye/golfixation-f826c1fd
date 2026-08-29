@@ -144,6 +144,7 @@ If the leaderboard looks out of date:
 | App asks you to sign in again | Sign back in with the same email or override code. |
 | Score was entered for the wrong hole | Scroll back, tap the hole, and submit the correct score. |
 | Celebration text did not appear | The animation only triggers for Birdie, Eagle, or better scores. |
+| Proximity contest is missing for a hole | It may only be active on specific holes; ask your admin which holes have contests. |
 
 ---
 
