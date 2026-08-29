@@ -81,6 +81,23 @@ Made a mistake? You can fix a score after it has been submitted.
 
 ---
 
+### Step 6: Record proximity contests
+
+Some tournaments run side contests for longest drive, closest-to-the-pin, or longest putt. If your tournament has them, you will see a **Proximity** section on the holes where they are active.
+
+1. Look for the contest banner below the scorecard on the active hole.
+2. Tap the player who achieved the result (for example, the team member who hit the longest drive).
+3. Add a short note if the contest requires a measurement or description.
+4. Tap **Save entry** to submit it.
+
+> **Screenshot placeholder:** `docs/screenshots/captain-proximity-entry.png`
+> ![Score entry screen showing a proximity contest banner and player selection](screenshots/captain-proximity-entry.png)
+> *Figure 6: Tap the player who earned the proximity result, then save the entry.*
+
+> **Callout:** You can only record a proximity result while you are on the matching hole. If you forget, ask your tournament admin to enter it from the live ops dashboard.
+
+---
+
 ## For Spectators and Basic Users
 
 ### Step 1: View the leaderboard
