@@ -108,7 +108,7 @@ Some tournaments run side contests for longest drive, closest-to-the-pin, or lon
 
 > **Screenshot placeholder:** `docs/screenshots/spectator-tournament-select.png`
 > ![Home page showing active tournament cards](screenshots/spectator-tournament-select.png)
-> *Figure 6: Tap an active tournament to open its leaderboard.*
+> *Figure 7: Tap an active tournament to open its leaderboard.*
 
 ---
 
@@ -120,7 +120,7 @@ Some tournaments run side contests for longest drive, closest-to-the-pin, or lon
 
 > **Screenshot placeholder:** `docs/screenshots/spectator-leaderboard.png`
 > ![Leaderboard showing team rankings and scores](screenshots/spectator-leaderboard.png)
-> *Figure 7: The leaderboard updates in real time as scores come in.*
+> *Figure 8: The leaderboard updates in real time as scores come in.*
 
 ---
 
