@@ -81,6 +81,23 @@ Made a mistake? You can fix a score after it has been submitted.
 
 ---
 
+### Step 6: Record proximity contests
+
+Some tournaments run side contests for longest drive, closest-to-the-pin, or longest putt. If your tournament has them, you will see a **Proximity** section on the holes where they are active.
+
+1. Look for the contest banner below the scorecard on the active hole.
+2. Tap the player who achieved the result (for example, the team member who hit the longest drive).
+3. Add a short note if the contest requires a measurement or description.
+4. Tap **Save entry** to submit it.
+
+> **Screenshot placeholder:** `docs/screenshots/captain-proximity-entry.png`
+> ![Score entry screen showing a proximity contest banner and player selection](screenshots/captain-proximity-entry.png)
+> *Figure 6: Tap the player who earned the proximity result, then save the entry.*
+
+> **Callout:** You can only record a proximity result while you are on the matching hole. If you forget, ask your tournament admin to enter it from the live ops dashboard.
+
+---
+
 ## For Spectators and Basic Users
 
 ### Step 1: View the leaderboard
@@ -91,7 +108,7 @@ Made a mistake? You can fix a score after it has been submitted.
 
 > **Screenshot placeholder:** `docs/screenshots/spectator-tournament-select.png`
 > ![Home page showing active tournament cards](screenshots/spectator-tournament-select.png)
-> *Figure 6: Tap an active tournament to open its leaderboard.*
+> *Figure 7: Tap an active tournament to open its leaderboard.*
 
 ---
 
@@ -103,7 +120,7 @@ Made a mistake? You can fix a score after it has been submitted.
 
 > **Screenshot placeholder:** `docs/screenshots/spectator-leaderboard.png`
 > ![Leaderboard showing team rankings and scores](screenshots/spectator-leaderboard.png)
-> *Figure 7: The leaderboard updates in real time as scores come in.*
+> *Figure 8: The leaderboard updates in real time as scores come in.*
 
 ---
 
@@ -127,6 +144,7 @@ If the leaderboard looks out of date:
 | App asks you to sign in again | Sign back in with the same email or override code. |
 | Score was entered for the wrong hole | Scroll back, tap the hole, and submit the correct score. |
 | Celebration text did not appear | The animation only triggers for Birdie, Eagle, or better scores. |
+| Proximity contest is missing for a hole | It may only be active on specific holes; ask your admin which holes have contests. |
 
 ---
 
@@ -139,4 +157,5 @@ Use this checklist during your first tournament:
 - [ ] I understand how to enter strokes and submit each hole.
 - [ ] I know how to spot the sync status pill.
 - [ ] I know how to scroll back and edit a previous score.
+- [ ] I know how to record a proximity contest when one appears on a hole.
 - [ ] I know who to contact if my team is missing.
