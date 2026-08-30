@@ -84,12 +84,12 @@ const codeLabel = {
 const code = {
   fontSize: '32px',
   fontWeight: 'bold' as const,
-  letterSpacing: '0.35em',
+  letterSpacing: '0.25em',
   color: '#2f7a4d',
   backgroundColor: '#f3f7f4',
   border: '1px solid #e5e7eb',
   borderRadius: '8px',
-  padding: '14px 16px',
+  padding: '14px 20px',
   textAlign: 'center' as const,
   margin: '0 0 24px',
 }
