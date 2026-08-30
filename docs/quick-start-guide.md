@@ -12,7 +12,7 @@ Golfixation replaces paper scorecards with live, collaborative scoring for golf 
 
 1. Open the Golfixation app and tap **Sign in**.
 2. Choose how you want to sign in:
-   - **Email code** (recommended): Enter your registered email address, then check your email for an 8-digit code and type it into the app.
+   - **Email code** (recommended): Enter your registered email address, then check your email for a 6-digit code and type it into the app.
    - **Override code**: If your admin gave you an override code, enter it along with your registered email address.
 3. You are now signed in and will see your captain dashboard.
 

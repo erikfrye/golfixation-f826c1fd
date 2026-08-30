@@ -93,7 +93,7 @@ function CaptainOtpForm() {
     setSent(true);
   };
 
-  const OTP_LENGTH = 8;
+  const OTP_LENGTH = 6;
 
   const verifyCode = async (token: string) => {
     setError(null);
@@ -147,8 +147,6 @@ function CaptainOtpForm() {
               <InputOTPSlot index={3} />
               <InputOTPSlot index={4} />
               <InputOTPSlot index={5} />
-              <InputOTPSlot index={6} />
-              <InputOTPSlot index={7} />
             </InputOTPGroup>
           </InputOTP>
         </div>
