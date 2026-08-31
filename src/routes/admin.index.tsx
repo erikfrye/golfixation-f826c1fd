@@ -2,8 +2,22 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, ChevronRight, Copy } from "lucide-react";
-import { adminListTournaments, adminCloneTournament } from "@/lib/admin.functions";
+import { Plus, ChevronRight, Copy, Trash2 } from "lucide-react";
+import {
+  adminListTournaments,
+  adminCloneTournament,
+  adminDeleteTournament,
+} from "@/lib/admin.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -34,6 +48,26 @@ function AdminDashboard() {
   const [savingAbout, setSavingAbout] = useState(false);
   const [aboutMsg, setAboutMsg] = useState<string | null>(null);
   const [cloningId, setCloningId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const confirmDelete = async () => {
+    if (!pendingDelete || confirmText.trim() !== pendingDelete.name) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await adminDeleteTournament({ data: { id: pendingDelete.id } });
+      await qc.invalidateQueries({ queryKey: ["admin", "tournaments"] });
+      setPendingDelete(null);
+      setConfirmText("");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const clone = async (id: string, currentName: string) => {
     const name = window.prompt(
@@ -142,11 +176,68 @@ function AdminDashboard() {
                   <Copy className="h-3.5 w-3.5" />
                   {cloningId === t.id ? "Cloning…" : "Clone"}
                 </button>
+                {t.status !== "active" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingDelete({ id: t.id, name: t.name });
+                      setConfirmText("");
+                      setDeleteError(null);
+                    }}
+                    title="Delete tournament"
+                    className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </button>
+                )}
               </div>
             </li>
           ))}
         </ul>
       )}
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this tournament?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes “{pendingDelete?.name}” along with its teams, players,
+              holes, scores, proximity contests and score history. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Type the tournament name to confirm
+            </label>
+            <input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={pendingDelete?.name}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+            {deleteError && <p className="mt-2 text-xs text-destructive">{deleteError}</p>}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmDelete();
+              }}
+              disabled={deleting || confirmText.trim() !== (pendingDelete?.name ?? "")}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : "Delete forever"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

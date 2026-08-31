@@ -8,6 +8,7 @@ import {
   listMyCaptainTeamsHandler,
   adminGetScoreAuditHandler,
   adminCloneTournamentHandler,
+  adminDeleteTournamentHandler,
 } from "@/lib/admin.functions";
 
 const ADMIN_UUID = "00000000-0000-0000-0000-000000000001";
@@ -234,5 +235,37 @@ describe("adminCloneTournamentHandler", () => {
     await expect(adminCloneTournamentHandler(admin as any, ADMIN_UUID, input)).rejects.toThrow(
       "insert failed",
     );
+  });
+});
+describe("adminDeleteTournamentHandler", () => {
+  it("refuses to delete an active tournament", async () => {
+    const admin = mockSupabaseAdmin();
+    queueAdminCheck(admin);
+    admin.queue("tournaments", { data: { id: T_UUID, status: "active" }, error: null });
+    await expect(
+      adminDeleteTournamentHandler(admin as any, ADMIN_UUID, { id: T_UUID }),
+    ).rejects.toThrow(/draft or completed/);
+  });
+
+  it("throws when the tournament does not exist", async () => {
+    const admin = mockSupabaseAdmin();
+    queueAdminCheck(admin);
+    admin.queue("tournaments", { data: null, error: null });
+    await expect(
+      adminDeleteTournamentHandler(admin as any, ADMIN_UUID, { id: T_UUID }),
+    ).rejects.toThrow(/not found/);
+  });
+
+  it("deletes a completed tournament", async () => {
+    const admin = mockSupabaseAdmin();
+    queueAdminCheck(admin);
+    admin.queue(
+      "tournaments",
+      { data: { id: T_UUID, status: "completed" }, error: null },
+      { data: null, error: null },
+    );
+    const res = await adminDeleteTournamentHandler(admin as any, ADMIN_UUID, { id: T_UUID });
+    expect(res).toEqual({ id: T_UUID });
+    expect(admin.calls("tournaments").some((c) => c.method === "delete")).toBe(true);
   });
 });

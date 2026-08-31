@@ -189,7 +189,15 @@ export type Database = {
           team_id?: string
           tournament_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hole_score_audit_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hole_scores: {
         Row: {
@@ -648,6 +656,7 @@ export type Database = {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
+      maintenance_prune_logs: { Args: never; Returns: undefined }
       move_to_dlq: {
         Args: {
           dlq_name: string
