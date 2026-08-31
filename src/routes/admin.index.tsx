@@ -2,8 +2,22 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, ChevronRight, Copy } from "lucide-react";
-import { adminListTournaments, adminCloneTournament } from "@/lib/admin.functions";
+import { Plus, ChevronRight, Copy, Trash2 } from "lucide-react";
+import {
+  adminListTournaments,
+  adminCloneTournament,
+  adminDeleteTournament,
+} from "@/lib/admin.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
