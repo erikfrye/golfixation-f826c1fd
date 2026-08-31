@@ -221,6 +221,35 @@ export const adminGetScoreAudit = createServerFn({ method: "POST" })
     adminGetScoreAuditHandler(getAdminClient(), context.userId, data),
   );
 
+export async function adminDeleteTournamentHandler(
+  admin: AdminLike,
+  userId: string,
+  data: { id: string },
+) {
+  const a = await assertAdmin(userId, admin);
+  const { data: t, error: readErr } = await a
+    .from("tournaments")
+    .select("id, status")
+    .eq("id", data.id)
+    .maybeSingle();
+  if (readErr) throw new Error(readErr.message);
+  if (!t) throw new Error("Tournament not found");
+  if (t.status === "active") {
+    throw new Error("Set the tournament to draft or completed before deleting it");
+  }
+  const { error } = await a.from("tournaments").delete().eq("id", data.id);
+  if (error) throw new Error(error.message);
+  return { id: data.id };
+}
+
+/* Admin: permanently delete a tournament (cascades teams, players, scores, contests) */
+export const adminDeleteTournament = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) =>
+    adminDeleteTournamentHandler(getAdminClient(), context.userId, data),
+  );
+
 /* Admin: clone a tournament (settings + holes as template) */
 export function genCode(len = 6) {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
