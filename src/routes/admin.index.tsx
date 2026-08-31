@@ -48,6 +48,26 @@ function AdminDashboard() {
   const [savingAbout, setSavingAbout] = useState(false);
   const [aboutMsg, setAboutMsg] = useState<string | null>(null);
   const [cloningId, setCloningId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const confirmDelete = async () => {
+    if (!pendingDelete || confirmText.trim() !== pendingDelete.name) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await adminDeleteTournament({ data: { id: pendingDelete.id } });
+      await qc.invalidateQueries({ queryKey: ["admin", "tournaments"] });
+      setPendingDelete(null);
+      setConfirmText("");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const clone = async (id: string, currentName: string) => {
     const name = window.prompt(
