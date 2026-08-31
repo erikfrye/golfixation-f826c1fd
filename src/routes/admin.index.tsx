@@ -176,11 +176,68 @@ function AdminDashboard() {
                   <Copy className="h-3.5 w-3.5" />
                   {cloningId === t.id ? "Cloning…" : "Clone"}
                 </button>
+                {t.status !== "active" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingDelete({ id: t.id, name: t.name });
+                      setConfirmText("");
+                      setDeleteError(null);
+                    }}
+                    title="Delete tournament"
+                    className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </button>
+                )}
               </div>
             </li>
           ))}
         </ul>
       )}
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this tournament?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes “{pendingDelete?.name}” along with its teams, players,
+              holes, scores, proximity contests and score history. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Type the tournament name to confirm
+            </label>
+            <input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={pendingDelete?.name}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+            {deleteError && <p className="mt-2 text-xs text-destructive">{deleteError}</p>}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmDelete();
+              }}
+              disabled={deleting || confirmText.trim() !== (pendingDelete?.name ?? "")}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : "Delete forever"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
