@@ -307,7 +307,7 @@ function TeamScoring() {
                     teeShotRestrictionActive ? "text-destructive" : "text-foreground"
                   }`}
                 >
-                  {teeShotsRequiredRemaining} / {holesRemaining} holes left
+                  {teeShotsRequiredRemaining} over {holesRemaining} holes left
                 </span>
               </div>
               {teeShotRestrictionActive && (
