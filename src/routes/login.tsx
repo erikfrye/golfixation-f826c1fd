@@ -241,20 +241,20 @@ function OverrideForm() {
         Skip email entirely with the tournament override code provided by your admin.
       </p>
       <input
-        type="text"
-        required
-        value={code}
-        onChange={(e) => setCode(e.target.value.toUpperCase())}
-        placeholder="OVERRIDE CODE"
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-center font-mono text-base tracking-wider"
-      />
-      <input
         type="email"
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="captain email"
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-base"
+      />
+      <input
+        type="text"
+        required
+        value={code}
+        onChange={(e) => setCode(e.target.value.toUpperCase())}
+        placeholder="OVERRIDE CODE"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-center font-mono text-base tracking-wider"
       />
       <button
         disabled={loading}
