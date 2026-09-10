@@ -47,6 +47,24 @@ export function UserMenu({ email, onSignOut }: UserMenuProps) {
     };
   }, [email]);
 
+  const { data: surveyUrls } = useQuery({
+    queryKey: ["app_settings", "survey_urls"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("captain_survey_url, admin_survey_url")
+        .eq("id", "app")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const feedbackUrl = isAdmin
+    ? surveyUrls?.admin_survey_url || surveyUrls?.captain_survey_url
+    : surveyUrls?.captain_survey_url;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
