@@ -36,11 +36,11 @@ function AdminDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("app_settings")
-        .select("about_content")
+        .select("about_content, captain_survey_url, admin_survey_url")
         .eq("id", "app")
         .maybeSingle();
       if (error) throw error;
-      return data?.about_content ?? "";
+      return data ?? { about_content: "", captain_survey_url: "", admin_survey_url: "" };
     },
   });
 
