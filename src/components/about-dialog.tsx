@@ -15,15 +15,21 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
   const [open, setOpen] = useState(false);
   const { mounted, leaving, close } = useExitAnimation(open, () => setOpen(false), 180);
 
-  const { data: appAbout } = useQuery({
+  const { data: appSettings } = useQuery({
     queryKey: ["app_settings", "about"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("app_settings").select("about_content").eq("id", "app").maybeSingle();
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("about_content, captain_survey_url, admin_survey_url")
+        .eq("id", "app")
+        .maybeSingle();
       if (error) throw error;
-      return data?.about_content ?? "";
+      return data;
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  const appAbout = appSettings?.about_content ?? "";
 
   const override = tournamentAbout?.trim();
   const content = override && override.length > 0 ? override : (appAbout ?? "");
