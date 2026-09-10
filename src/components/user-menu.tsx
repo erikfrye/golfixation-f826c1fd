@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { LogOut, User, ShieldUser, UserPen } from "lucide-react";
+import { LogOut, User, ShieldUser, UserPen, MessageSquareText } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { listMyCaptainTeams } from "@/lib/admin.functions";
 import {
