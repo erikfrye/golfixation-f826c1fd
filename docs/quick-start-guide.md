@@ -134,6 +134,16 @@ If the leaderboard looks out of date:
 
 ---
 
+## Share Feedback
+
+Your input helps improve Golfixation for future tournaments.
+
+1. Tap the **profile icon** in the top corner.
+2. Choose **Give feedback** from the menu.
+3. Fill out the short survey and submit it.
+
+---
+
 ## Quick Tips
 
 | Problem | What to do |

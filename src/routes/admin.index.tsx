@@ -36,15 +36,17 @@ function AdminDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("app_settings")
-        .select("about_content")
+        .select("about_content, captain_survey_url, admin_survey_url")
         .eq("id", "app")
         .maybeSingle();
       if (error) throw error;
-      return data?.about_content ?? "";
+      return data ?? { about_content: "", captain_survey_url: "", admin_survey_url: "" };
     },
   });
 
   const [about, setAbout] = useState("");
+  const [captainSurveyUrl, setCaptainSurveyUrl] = useState("");
+  const [adminSurveyUrl, setAdminSurveyUrl] = useState("");
   const [savingAbout, setSavingAbout] = useState(false);
   const [aboutMsg, setAboutMsg] = useState<string | null>(null);
   const [cloningId, setCloningId] = useState<string | null>(null);
@@ -88,15 +90,23 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (aboutQ.data !== undefined) setAbout(aboutQ.data);
+    if (aboutQ.data !== undefined) {
+      setAbout(aboutQ.data.about_content ?? "");
+      setCaptainSurveyUrl(aboutQ.data.captain_survey_url ?? "");
+      setAdminSurveyUrl(aboutQ.data.admin_survey_url ?? "");
+    }
   }, [aboutQ.data]);
 
   const saveAbout = async () => {
     setSavingAbout(true);
     setAboutMsg(null);
-    const { error } = await supabase
-      .from("app_settings")
-      .upsert({ id: "app", about_content: about, updated_at: new Date().toISOString() });
+    const { error } = await supabase.from("app_settings").upsert({
+      id: "app",
+      about_content: about,
+      captain_survey_url: captainSurveyUrl.trim() || null,
+      admin_survey_url: adminSurveyUrl.trim() || null,
+      updated_at: new Date().toISOString(),
+    });
     setSavingAbout(false);
     setAboutMsg(error ? error.message : "Saved");
   };
@@ -115,6 +125,34 @@ function AdminDashboard() {
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           placeholder="About this app…"
         />
+        <div className="mt-4 space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-foreground">Captain survey URL</label>
+            <input
+              type="url"
+              value={captainSurveyUrl}
+              onChange={(e) => setCaptainSurveyUrl(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="https://docs.google.com/forms/…"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Shown to captains in the profile menu and in the About box.
+            </p>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-foreground">Admin survey URL</label>
+            <input
+              type="url"
+              value={adminSurveyUrl}
+              onChange={(e) => setAdminSurveyUrl(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="https://docs.google.com/forms/…"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Shown to admins in the profile menu. Falls back to the captain URL if empty.
+            </p>
+          </div>
+        </div>
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={saveAbout}

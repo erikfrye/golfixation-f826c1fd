@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { LogOut, User, ShieldUser, UserPen } from "lucide-react";
+import { LogOut, User, ShieldUser, UserPen, MessageSquareText } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { listMyCaptainTeams } from "@/lib/admin.functions";
 import {
@@ -46,6 +47,24 @@ export function UserMenu({ email, onSignOut }: UserMenuProps) {
     };
   }, [email]);
 
+  const { data: surveyUrls } = useQuery({
+    queryKey: ["app_settings", "survey_urls"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("captain_survey_url, admin_survey_url")
+        .eq("id", "app")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const feedbackUrl = isAdmin
+    ? surveyUrls?.admin_survey_url || surveyUrls?.captain_survey_url
+    : surveyUrls?.captain_survey_url;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -81,6 +100,15 @@ export function UserMenu({ email, onSignOut }: UserMenuProps) {
           </DropdownMenuItem>
         )}
         {(isCaptain || isAdmin) && <DropdownMenuSeparator />}
+        {feedbackUrl && (
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <a href={feedbackUrl} target="_blank" rel="noopener noreferrer">
+              <MessageSquareText className="mr-2 h-4 w-4" />
+              Give feedback
+            </a>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           Sign out

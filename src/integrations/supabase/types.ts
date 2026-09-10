@@ -35,16 +35,22 @@ export type Database = {
       app_settings: {
         Row: {
           about_content: string | null
+          admin_survey_url: string | null
+          captain_survey_url: string | null
           id: string
           updated_at: string
         }
         Insert: {
           about_content?: string | null
+          admin_survey_url?: string | null
+          captain_survey_url?: string | null
           id: string
           updated_at?: string
         }
         Update: {
           about_content?: string | null
+          admin_survey_url?: string | null
+          captain_survey_url?: string | null
           id?: string
           updated_at?: string
         }

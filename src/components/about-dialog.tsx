@@ -15,15 +15,21 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
   const [open, setOpen] = useState(false);
   const { mounted, leaving, close } = useExitAnimation(open, () => setOpen(false), 180);
 
-  const { data: appAbout } = useQuery({
+  const { data: appSettings } = useQuery({
     queryKey: ["app_settings", "about"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("app_settings").select("about_content").eq("id", "app").maybeSingle();
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("about_content, captain_survey_url, admin_survey_url")
+        .eq("id", "app")
+        .maybeSingle();
       if (error) throw error;
-      return data?.about_content ?? "";
+      return data;
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  const appAbout = appSettings?.about_content ?? "";
 
   const override = tournamentAbout?.trim();
   const content = override && override.length > 0 ? override : (appAbout ?? "");
@@ -82,6 +88,36 @@ export function AboutButton({ tournamentAbout, tournamentName, className }: Abou
               <div className="mt-4 whitespace-pre-wrap text-sm text-foreground">
                 {content || "No information has been added yet."}
               </div>
+              {appSettings?.captain_survey_url && (
+                <div className="mt-4 rounded-lg border border-border bg-muted/40 p-3 text-sm">
+                  <p className="text-foreground">
+                    Help us improve Golfixation — this 2-minute survey shapes what we build next.
+                  </p>
+                  <a
+                    href={appSettings.captain_survey_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                  >
+                    Open survey
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M7 7h10v10" />
+                      <path d="M7 17 17 7" />
+                    </svg>
+                  </a>
+                </div>
+              )}
               <div className="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">
                 Built with{" "}
                 <a
