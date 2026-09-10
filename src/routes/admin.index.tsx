@@ -45,6 +45,8 @@ function AdminDashboard() {
   });
 
   const [about, setAbout] = useState("");
+  const [captainSurveyUrl, setCaptainSurveyUrl] = useState("");
+  const [adminSurveyUrl, setAdminSurveyUrl] = useState("");
   const [savingAbout, setSavingAbout] = useState(false);
   const [aboutMsg, setAboutMsg] = useState<string | null>(null);
   const [cloningId, setCloningId] = useState<string | null>(null);
