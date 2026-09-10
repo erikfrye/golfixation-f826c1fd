@@ -100,6 +100,15 @@ export function UserMenu({ email, onSignOut }: UserMenuProps) {
           </DropdownMenuItem>
         )}
         {(isCaptain || isAdmin) && <DropdownMenuSeparator />}
+        {feedbackUrl && (
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <a href={feedbackUrl} target="_blank" rel="noopener noreferrer">
+              <MessageSquareText className="mr-2 h-4 w-4" />
+              Give feedback
+            </a>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           Sign out
