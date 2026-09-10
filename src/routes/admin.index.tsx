@@ -90,15 +90,23 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (aboutQ.data !== undefined) setAbout(aboutQ.data);
+    if (aboutQ.data !== undefined) {
+      setAbout(aboutQ.data.about_content ?? "");
+      setCaptainSurveyUrl(aboutQ.data.captain_survey_url ?? "");
+      setAdminSurveyUrl(aboutQ.data.admin_survey_url ?? "");
+    }
   }, [aboutQ.data]);
 
   const saveAbout = async () => {
     setSavingAbout(true);
     setAboutMsg(null);
-    const { error } = await supabase
-      .from("app_settings")
-      .upsert({ id: "app", about_content: about, updated_at: new Date().toISOString() });
+    const { error } = await supabase.from("app_settings").upsert({
+      id: "app",
+      about_content: about,
+      captain_survey_url: captainSurveyUrl.trim() || null,
+      admin_survey_url: adminSurveyUrl.trim() || null,
+      updated_at: new Date().toISOString(),
+    });
     setSavingAbout(false);
     setAboutMsg(error ? error.message : "Saved");
   };
