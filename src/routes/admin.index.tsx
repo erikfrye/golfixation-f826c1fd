@@ -125,6 +125,34 @@ function AdminDashboard() {
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           placeholder="About this app…"
         />
+        <div className="mt-4 space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-foreground">Captain survey URL</label>
+            <input
+              type="url"
+              value={captainSurveyUrl}
+              onChange={(e) => setCaptainSurveyUrl(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="https://docs.google.com/forms/…"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Shown to captains in the profile menu and in the About box.
+            </p>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-foreground">Admin survey URL</label>
+            <input
+              type="url"
+              value={adminSurveyUrl}
+              onChange={(e) => setAdminSurveyUrl(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="https://docs.google.com/forms/…"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Shown to admins in the profile menu. Falls back to the captain URL if empty.
+            </p>
+          </div>
+        </div>
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={saveAbout}
