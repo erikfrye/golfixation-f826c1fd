@@ -1044,6 +1044,39 @@ function HoleCard({
           </button>
         </div>
       </SheetDialog>
+
+      <SheetDialog
+        open={teeShotConfirmOpen}
+        onClose={() => setTeeShotConfirmOpen(false)}
+        title="Tee-shot minimum at risk"
+      >
+        <p className="text-sm text-muted-foreground">
+          {playersNeedingTeeShots.map((p) => p.name).join(", ")} still need tee shots, and there are only{" "}
+          {playersNeedingTeeShots.length === 1 ? "enough holes" : "just enough holes"} left to cover them. Saving hole{" "}
+          {hole.hole_number} with another player means your team can no longer meet the minimum, and your score will be
+          flagged on the leaderboard.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setTeeShotConfirmOpen(false)}
+            className="inline-flex h-9 items-center rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            Cancel, let me fix it
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOverrideAck(true);
+              setTeeShotConfirmOpen(false);
+              runScoreChecks(true);
+            }}
+            className="inline-flex h-9 items-center rounded-md bg-destructive px-3 text-sm font-medium text-destructive-foreground"
+          >
+            Save anyway
+          </button>
+        </div>
+      </SheetDialog>
     </div>
   );
 }
