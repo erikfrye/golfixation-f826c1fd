@@ -479,6 +479,16 @@ function ScoreRow({
             }`}
           />
           <span className="truncate">{row.team.name}</span>
+          {row.teeShotFlagged && (
+            <span
+              title="Tee-shot minimum not met"
+              aria-label="Tee-shot minimum not met"
+              className="inline-flex shrink-0 items-center gap-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-destructive"
+            >
+              <AlertTriangle className="h-3 w-3" />
+              Flagged
+            </span>
+          )}
         </span>
         <span className="text-right font-mono text-muted-foreground">
           {row.holesPlayed}/{totalHoles}
