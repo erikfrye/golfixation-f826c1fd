@@ -726,6 +726,7 @@ function HoleCard({
   const [validationOpen, setValidationOpen] = useState(false);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [teeShotConfirmOpen, setTeeShotConfirmOpen] = useState(false);
+  const [overrideAck, setOverrideAck] = useState(false);
 
   const teeShotViolation =
     isTexasScramble &&
