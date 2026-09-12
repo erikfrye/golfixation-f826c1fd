@@ -87,7 +87,9 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status, num_holes, format, about_content, mulligans_enabled, location, start_date")
+        .select(
+          "id, name, status, num_holes, format, about_content, mulligans_enabled, location, start_date, tee_shot_minimum",
+        )
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -131,7 +133,9 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hole_scores")
-        .select("team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at, updated_at, last_edit_reason")
+        .select(
+          "team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at, updated_at, last_edit_reason, tee_shot_override",
+        )
         .eq("tournament_id", id);
       if (error) throw error;
       return (data ?? []) as Score[];
