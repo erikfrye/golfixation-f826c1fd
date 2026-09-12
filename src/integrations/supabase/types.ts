@@ -214,6 +214,7 @@ export type Database = {
           mulligan_player_id: string | null
           strokes: number
           team_id: string
+          tee_shot_override: boolean
           tee_shot_player_id: string | null
           tournament_id: string
           updated_at: string
@@ -226,6 +227,7 @@ export type Database = {
           mulligan_player_id?: string | null
           strokes: number
           team_id: string
+          tee_shot_override?: boolean
           tee_shot_player_id?: string | null
           tournament_id: string
           updated_at?: string
@@ -238,6 +240,7 @@ export type Database = {
           mulligan_player_id?: string | null
           strokes?: number
           team_id?: string
+          tee_shot_override?: boolean
           tee_shot_player_id?: string | null
           tournament_id?: string
           updated_at?: string
