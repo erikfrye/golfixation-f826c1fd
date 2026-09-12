@@ -752,7 +752,7 @@ function HoleCard({
 
   const isExtreme = strokes >= hole.par * 2 || strokes <= hole.par - 3;
 
-  const persist = (editReason: string | null) => {
+  const persist = (editReason: string | null, override = overrideAck) => {
     if (isTexasScramble && !teeShotPlayerId) {
       setError("Select tee-shot player");
       return;
@@ -772,6 +772,7 @@ function HoleCard({
       tee_shot_player_id: isTexasScramble ? teeShotPlayerId || null : null,
       mulligan_player_id: mulligansEnabled ? mulliganPlayerId || null : null,
       last_edit_reason: editReason,
+      tee_shot_override: override,
     };
     // Enqueue: always succeeds locally, sync engine handles network.
     getQueueForTeam(team.id).enqueue(payload);
@@ -783,21 +784,23 @@ function HoleCard({
     setReasonOpen(false);
     setValidationOpen(false);
     setValidationMessage(null);
+    setTeeShotConfirmOpen(false);
+    setOverrideAck(false);
     const prevTier = existing ? tierForScore(existing.strokes, hole.par) : null;
     const newTier = tierForScore(strokes, hole.par);
     onSaved(newTier && newTier !== prevTier ? newTier : null);
   };
 
-  const attemptSave = () => {
+  const attemptSave = (override = overrideAck) => {
     if (requiresReason) {
       setReason("");
       setReasonOpen(true);
       return;
     }
-    persist(null);
+    persist(null, override);
   };
 
-  const save = () => {
+  const runScoreChecks = (override = overrideAck) => {
     if (isExtreme) {
       if (strokes >= hole.par * 2) {
         setValidationMessage(
@@ -811,7 +814,15 @@ function HoleCard({
       setValidationOpen(true);
       return;
     }
-    attemptSave();
+    attemptSave(override);
+  };
+
+  const save = () => {
+    if (teeShotViolation && !overrideAck) {
+      setTeeShotConfirmOpen(true);
+      return;
+    }
+    runScoreChecks();
   };
 
   const diff = strokes - hole.par;
