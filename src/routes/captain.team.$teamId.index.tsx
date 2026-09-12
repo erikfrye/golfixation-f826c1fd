@@ -725,6 +725,13 @@ function HoleCard({
   const [reason, setReason] = useState("");
   const [validationOpen, setValidationOpen] = useState(false);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [teeShotConfirmOpen, setTeeShotConfirmOpen] = useState(false);
+
+  const teeShotViolation =
+    isTexasScramble &&
+    teeShotRestrictionActive &&
+    !!teeShotPlayerId &&
+    !playersNeedingTeeShots.some((p) => p.id === teeShotPlayerId);
 
   const dirty =
     !existing ||
