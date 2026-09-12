@@ -209,7 +209,7 @@ function TournamentPage() {
     const counts = new Map<number, number>();
     ranked.forEach((r) => counts.set(r.rank, (counts.get(r.rank) ?? 0) + 1));
     return ranked.map((r) => ({ ...r, isTied: (counts.get(r.rank) ?? 0) > 1 }));
-  }, [holesQ.data, teamsQ.data, scoresQ.data]);
+  }, [holesQ.data, teamsQ.data, scoresQ.data, playersQ.data, tournamentQ.data]);
 
   // Detect rank changes
   useEffect(() => {
@@ -436,7 +436,15 @@ function ScoreRow({
   rankChange,
   changedHoles,
 }: {
-  row: { team: Team; holesPlayed: number; totalStrokes: number; net: number; rank: number; isTied: boolean };
+  row: {
+    team: Team;
+    holesPlayed: number;
+    totalStrokes: number;
+    net: number;
+    rank: number;
+    isTied: boolean;
+    teeShotFlagged?: boolean;
+  };
   totalHoles: number;
   holes: Hole[];
   scores: Score[];
