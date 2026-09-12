@@ -169,13 +169,23 @@ function TournamentPage() {
   const leaderboard = useMemo(() => {
     if (!holesQ.data || !teamsQ.data || !scoresQ.data) return [];
     const parByHole = new Map(holesQ.data.map((h) => [h.hole_number, h.par]));
+    const t = tournamentQ.data;
     const rows = teamsQ.data.map((team) => {
       const teamScores = scoresQ.data.filter((s) => s.team_id === team.id);
       const holesPlayed = teamScores.length;
       const totalStrokes = teamScores.reduce((sum, s) => sum + s.strokes, 0);
       const totalPar = teamScores.reduce((sum, s) => sum + (parByHole.get(s.hole_number) ?? 0), 0);
       const net = totalStrokes - totalPar;
-      return { team, holesPlayed, totalStrokes, net };
+      const teeShotFlagged = t
+        ? isTeeShotMinimumFlagged({
+            format: t.format,
+            teeShotMinimum: t.tee_shot_minimum ?? 0,
+            numHoles: t.num_holes,
+            playerIds: (playersQ.data ?? []).filter((p) => p.team_id === team.id).map((p) => p.id),
+            scores: teamScores,
+          })
+        : false;
+      return { team, holesPlayed, totalStrokes, net, teeShotFlagged };
     });
     rows.sort((a, b) => {
       // Teams with no scores entered always sort to the bottom
