@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Flag, ChevronLeft, ChevronDown, ChevronRight, X, Pencil, Trophy } from "lucide-react";
+import { Flag, ChevronLeft, ChevronDown, ChevronRight, X, Pencil, Trophy, AlertTriangle } from "lucide-react";
+import { isTeeShotMinimumFlagged } from "@/lib/tee-shot";
 import { LiveIndicator } from "@/components/live-indicator";
 import { AboutButton } from "@/components/about-dialog";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -34,6 +35,7 @@ type Tournament = {
   mulligans_enabled: boolean;
   location: string | null;
   start_date: string | null;
+  tee_shot_minimum: number;
 };
 type Team = { id: string; name: string };
 type Hole = { hole_number: number; par: number };
@@ -46,6 +48,7 @@ type Score = {
   first_saved_at: string;
   updated_at: string;
   last_edit_reason: string | null;
+  tee_shot_override: boolean | null;
 };
 type Player = { id: string; name: string; team_id: string };
 
