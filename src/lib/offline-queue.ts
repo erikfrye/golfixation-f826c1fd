@@ -8,6 +8,7 @@ export type HoleScorePayload = {
   tee_shot_player_id: string | null;
   mulligan_player_id: string | null;
   last_edit_reason: string | null;
+  tee_shot_override?: boolean;
 };
 
 export type QueueItem = {

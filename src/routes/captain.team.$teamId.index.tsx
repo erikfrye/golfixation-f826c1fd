@@ -725,6 +725,14 @@ function HoleCard({
   const [reason, setReason] = useState("");
   const [validationOpen, setValidationOpen] = useState(false);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [teeShotConfirmOpen, setTeeShotConfirmOpen] = useState(false);
+  const [overrideAck, setOverrideAck] = useState(false);
+
+  const teeShotViolation =
+    isTexasScramble &&
+    teeShotRestrictionActive &&
+    !!teeShotPlayerId &&
+    !playersNeedingTeeShots.some((p) => p.id === teeShotPlayerId);
 
   const dirty =
     !existing ||
@@ -745,7 +753,7 @@ function HoleCard({
 
   const isExtreme = strokes >= hole.par * 2 || strokes <= hole.par - 3;
 
-  const persist = (editReason: string | null) => {
+  const persist = (editReason: string | null, override = overrideAck) => {
     if (isTexasScramble && !teeShotPlayerId) {
       setError("Select tee-shot player");
       return;
@@ -765,6 +773,7 @@ function HoleCard({
       tee_shot_player_id: isTexasScramble ? teeShotPlayerId || null : null,
       mulligan_player_id: mulligansEnabled ? mulliganPlayerId || null : null,
       last_edit_reason: editReason,
+      tee_shot_override: override,
     };
     // Enqueue: always succeeds locally, sync engine handles network.
     getQueueForTeam(team.id).enqueue(payload);
@@ -776,21 +785,23 @@ function HoleCard({
     setReasonOpen(false);
     setValidationOpen(false);
     setValidationMessage(null);
+    setTeeShotConfirmOpen(false);
+    setOverrideAck(false);
     const prevTier = existing ? tierForScore(existing.strokes, hole.par) : null;
     const newTier = tierForScore(strokes, hole.par);
     onSaved(newTier && newTier !== prevTier ? newTier : null);
   };
 
-  const attemptSave = () => {
+  const attemptSave = (override = overrideAck) => {
     if (requiresReason) {
       setReason("");
       setReasonOpen(true);
       return;
     }
-    persist(null);
+    persist(null, override);
   };
 
-  const save = () => {
+  const runScoreChecks = (override = overrideAck) => {
     if (isExtreme) {
       if (strokes >= hole.par * 2) {
         setValidationMessage(
@@ -804,7 +815,15 @@ function HoleCard({
       setValidationOpen(true);
       return;
     }
-    attemptSave();
+    attemptSave(override);
+  };
+
+  const save = () => {
+    if (teeShotViolation && !overrideAck) {
+      setTeeShotConfirmOpen(true);
+      return;
+    }
+    runScoreChecks();
   };
 
   const diff = strokes - hole.par;
@@ -1022,6 +1041,39 @@ function HoleCard({
             className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground"
           >
             Yes, save anyway
+          </button>
+        </div>
+      </SheetDialog>
+
+      <SheetDialog
+        open={teeShotConfirmOpen}
+        onClose={() => setTeeShotConfirmOpen(false)}
+        title="Tee-shot minimum at risk"
+      >
+        <p className="text-sm text-muted-foreground">
+          {playersNeedingTeeShots.map((p) => p.name).join(", ")} still need tee shots, and there are only{" "}
+          {playersNeedingTeeShots.length === 1 ? "enough holes" : "just enough holes"} left to cover them. Saving hole{" "}
+          {hole.hole_number} with another player means your team can no longer meet the minimum, and your score will be
+          flagged on the leaderboard.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setTeeShotConfirmOpen(false)}
+            className="inline-flex h-9 items-center rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            Cancel, let me fix it
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOverrideAck(true);
+              setTeeShotConfirmOpen(false);
+              runScoreChecks(true);
+            }}
+            className="inline-flex h-9 items-center rounded-md bg-destructive px-3 text-sm font-medium text-destructive-foreground"
+          >
+            Save anyway
           </button>
         </div>
       </SheetDialog>

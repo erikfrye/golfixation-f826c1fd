@@ -1,0 +1,1 @@
+ALTER TABLE public.hole_scores ADD COLUMN IF NOT EXISTS tee_shot_override boolean NOT NULL DEFAULT false;

@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789179949062,
+      "tag": "0000_add_tee_shot_override",
+      "breakpoints": true
+    }
+  ]
+}

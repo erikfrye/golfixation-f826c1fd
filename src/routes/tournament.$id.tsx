@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Flag, ChevronLeft, ChevronDown, ChevronRight, X, Pencil, Trophy } from "lucide-react";
+import { Flag, ChevronLeft, ChevronDown, ChevronRight, X, Pencil, Trophy, AlertTriangle } from "lucide-react";
+import { isTeeShotMinimumFlagged } from "@/lib/tee-shot";
 import { LiveIndicator } from "@/components/live-indicator";
 import { AboutButton } from "@/components/about-dialog";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -34,6 +35,7 @@ type Tournament = {
   mulligans_enabled: boolean;
   location: string | null;
   start_date: string | null;
+  tee_shot_minimum: number;
 };
 type Team = { id: string; name: string };
 type Hole = { hole_number: number; par: number };
@@ -46,6 +48,7 @@ type Score = {
   first_saved_at: string;
   updated_at: string;
   last_edit_reason: string | null;
+  tee_shot_override: boolean | null;
 };
 type Player = { id: string; name: string; team_id: string };
 
@@ -84,7 +87,9 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, name, status, num_holes, format, about_content, mulligans_enabled, location, start_date")
+        .select(
+          "id, name, status, num_holes, format, about_content, mulligans_enabled, location, start_date, tee_shot_minimum",
+        )
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -128,7 +133,9 @@ function TournamentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hole_scores")
-        .select("team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at, updated_at, last_edit_reason")
+        .select(
+          "team_id, hole_number, strokes, tee_shot_player_id, mulligan_player_id, first_saved_at, updated_at, last_edit_reason, tee_shot_override",
+        )
         .eq("tournament_id", id);
       if (error) throw error;
       return (data ?? []) as Score[];
@@ -162,13 +169,23 @@ function TournamentPage() {
   const leaderboard = useMemo(() => {
     if (!holesQ.data || !teamsQ.data || !scoresQ.data) return [];
     const parByHole = new Map(holesQ.data.map((h) => [h.hole_number, h.par]));
+    const t = tournamentQ.data;
     const rows = teamsQ.data.map((team) => {
       const teamScores = scoresQ.data.filter((s) => s.team_id === team.id);
       const holesPlayed = teamScores.length;
       const totalStrokes = teamScores.reduce((sum, s) => sum + s.strokes, 0);
       const totalPar = teamScores.reduce((sum, s) => sum + (parByHole.get(s.hole_number) ?? 0), 0);
       const net = totalStrokes - totalPar;
-      return { team, holesPlayed, totalStrokes, net };
+      const teeShotFlagged = t
+        ? isTeeShotMinimumFlagged({
+            format: t.format,
+            teeShotMinimum: t.tee_shot_minimum ?? 0,
+            numHoles: t.num_holes,
+            playerIds: (playersQ.data ?? []).filter((p) => p.team_id === team.id).map((p) => p.id),
+            scores: teamScores,
+          })
+        : false;
+      return { team, holesPlayed, totalStrokes, net, teeShotFlagged };
     });
     rows.sort((a, b) => {
       // Teams with no scores entered always sort to the bottom
@@ -192,7 +209,7 @@ function TournamentPage() {
     const counts = new Map<number, number>();
     ranked.forEach((r) => counts.set(r.rank, (counts.get(r.rank) ?? 0) + 1));
     return ranked.map((r) => ({ ...r, isTied: (counts.get(r.rank) ?? 0) > 1 }));
-  }, [holesQ.data, teamsQ.data, scoresQ.data]);
+  }, [holesQ.data, teamsQ.data, scoresQ.data, playersQ.data, tournamentQ.data]);
 
   // Detect rank changes
   useEffect(() => {
@@ -419,7 +436,15 @@ function ScoreRow({
   rankChange,
   changedHoles,
 }: {
-  row: { team: Team; holesPlayed: number; totalStrokes: number; net: number; rank: number; isTied: boolean };
+  row: {
+    team: Team;
+    holesPlayed: number;
+    totalStrokes: number;
+    net: number;
+    rank: number;
+    isTied: boolean;
+    teeShotFlagged?: boolean;
+  };
   totalHoles: number;
   holes: Hole[];
   scores: Score[];
@@ -454,6 +479,16 @@ function ScoreRow({
             }`}
           />
           <span className="truncate">{row.team.name}</span>
+          {row.teeShotFlagged && (
+            <span
+              title="Tee-shot minimum not met"
+              aria-label="Tee-shot minimum not met"
+              className="inline-flex shrink-0 items-center gap-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-destructive"
+            >
+              <AlertTriangle className="h-3 w-3" />
+              Flagged
+            </span>
+          )}
         </span>
         <span className="text-right font-mono text-muted-foreground">
           {row.holesPlayed}/{totalHoles}
