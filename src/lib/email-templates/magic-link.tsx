@@ -14,31 +14,25 @@ import {
 interface MagicLinkEmailProps {
   siteName: string
   confirmationUrl: string
-  token?: string
 }
 
 export const MagicLinkEmail = ({
   siteName,
   confirmationUrl,
-  token,
 }: MagicLinkEmailProps) => (
   <Html lang="en" dir="ltr">
-    <Head />
+    <Head>
+      <style>{darkModeCss}</style>
+    </Head>
     <Preview>Your login link for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Your login link</Heading>
         <Text style={text}>
-          Use the code below to log in to {siteName}, or tap the button.
-          The code and link expire shortly.
+          Click the button below to log in to {siteName}. This link will expire
+          shortly.
         </Text>
-        {token ? (
-          <>
-            <Text style={codeLabel}>Your login code</Text>
-            <Text style={code}>{token}</Text>
-          </>
-        ) : null}
-        <Button style={button} href={confirmationUrl}>
+        <Button className="dm-btn" style={button} href={confirmationUrl}>
           Log In
         </Button>
         <Text style={footer}>
@@ -69,27 +63,17 @@ const button = {
   backgroundColor: '#000000',
   color: '#ffffff',
   fontSize: '14px',
+  border: '1px solid #000000',
   borderRadius: '8px',
   padding: '12px 20px',
   textDecoration: 'none',
 }
 const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
-const codeLabel = {
-  fontSize: '12px',
-  color: '#55575d',
-  margin: '0 0 6px',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.08em',
-}
-const code = {
-  fontSize: '32px',
-  fontWeight: 'bold' as const,
-  letterSpacing: '0.25em',
-  color: '#2f7a4d',
-  backgroundColor: '#f3f7f4',
-  border: '1px solid #e5e7eb',
-  borderRadius: '8px',
-  padding: '14px 20px',
-  textAlign: 'center' as const,
-  margin: '0 0 24px',
-}
+// Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
+const darkModeCss = `
+  @media (prefers-color-scheme: dark) {
+    .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  }
+  [data-ogsc] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  [data-ogsb] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+`
