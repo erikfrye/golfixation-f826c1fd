@@ -1,28 +1,24 @@
 import * as React from 'react'
-import type { ComponentType } from 'react'
+import { render } from '@react-email/render'
 import { createFileRoute } from '@tanstack/react-router'
+import { SignupEmail } from '@/lib/email-templates/signup'
+import { InviteEmail } from '@/lib/email-templates/invite'
+import { MagicLinkEmail } from '@/lib/email-templates/magic-link'
+import { RecoveryEmail } from '@/lib/email-templates/recovery'
+import { EmailChangeEmail } from '@/lib/email-templates/email-change'
+import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
-async function getEmailTemplate(type: string): Promise<ComponentType<any> | null> {
-  switch (type) {
-    case 'signup':
-      return (await import('@/lib/email-templates/signup')).SignupEmail
-    case 'invite':
-      return (await import('@/lib/email-templates/invite')).InviteEmail
-    case 'magiclink':
-      return (await import('@/lib/email-templates/magic-link')).MagicLinkEmail
-    case 'recovery':
-      return (await import('@/lib/email-templates/recovery')).RecoveryEmail
-    case 'email_change':
-      return (await import('@/lib/email-templates/email-change')).EmailChangeEmail
-    case 'reauthentication':
-      return (await import('@/lib/email-templates/reauthentication')).ReauthenticationEmail
-    default:
-      return null
-  }
+const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
+  signup: SignupEmail,
+  invite: InviteEmail,
+  magiclink: MagicLinkEmail,
+  recovery: RecoveryEmail,
+  email_change: EmailChangeEmail,
+  reauthentication: ReauthenticationEmail,
 }
 
 // Configuration
-const SITE_NAME = "golfixation"
+const SITE_NAME = "Golfixation App"
 const ROOT_DOMAIN = "golfixation.com"
 
 // Sample data for preview mode ONLY (not used in actual email sending).
@@ -42,7 +38,6 @@ const SAMPLE_DATA: Record<string, object> = {
   magiclink: {
     siteName: SITE_NAME,
     confirmationUrl: SAMPLE_PROJECT_URL,
-    token: '123456',
   },
   recovery: {
     siteName: SITE_NAME,
@@ -69,7 +64,7 @@ export const Route = createFileRoute("/lovable/email/auth/preview")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env.LOVABLE_API_KEY
+        const apiKey = process.env['LOVABLE_API_KEY']
 
         if (!apiKey) {
           return Response.json(
@@ -95,7 +90,7 @@ export const Route = createFileRoute("/lovable/email/auth/preview")({
           )
         }
 
-        const EmailTemplate = await getEmailTemplate(type)
+        const EmailTemplate = EMAIL_TEMPLATES[type]
 
         if (!EmailTemplate) {
           return Response.json(
@@ -105,7 +100,6 @@ export const Route = createFileRoute("/lovable/email/auth/preview")({
         }
 
         const sampleData = SAMPLE_DATA[type] || {}
-        const { render } = await import('@react-email/render')
         const html = await render(React.createElement(EmailTemplate, sampleData))
 
         return new Response(html, {
