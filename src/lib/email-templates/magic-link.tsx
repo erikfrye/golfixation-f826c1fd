@@ -14,11 +14,13 @@ import {
 interface MagicLinkEmailProps {
   siteName: string
   confirmationUrl: string
+  token?: string
 }
 
 export const MagicLinkEmail = ({
   siteName,
   confirmationUrl,
+  token,
 }: MagicLinkEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head>
@@ -29,9 +31,15 @@ export const MagicLinkEmail = ({
       <Container style={container}>
         <Heading style={h1}>Your login link</Heading>
         <Text style={text}>
-          Click the button below to log in to {siteName}. This link will expire
-          shortly.
+          Use the code below to log in to {siteName}, or tap the button.
+          The code and link expire shortly.
         </Text>
+        {token ? (
+          <>
+            <Text style={codeLabel}>Your login code</Text>
+            <Text style={code}>{token}</Text>
+          </>
+        ) : null}
         <Button className="dm-btn" style={button} href={confirmationUrl}>
           Log In
         </Button>
@@ -42,6 +50,26 @@ export const MagicLinkEmail = ({
     </Body>
   </Html>
 )
+
+const codeLabel = {
+  fontSize: '12px',
+  color: '#55575d',
+  margin: '0 0 6px',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.08em',
+}
+const code = {
+  fontSize: '32px',
+  fontWeight: 'bold' as const,
+  letterSpacing: '0.25em',
+  color: '#2f7a4d',
+  backgroundColor: '#f3f7f4',
+  border: '1px solid #e5e7eb',
+  borderRadius: '8px',
+  padding: '14px 20px',
+  textAlign: 'center' as const,
+  margin: '0 0 24px',
+}
 
 export default MagicLinkEmail
 
