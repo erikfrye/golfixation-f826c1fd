@@ -143,6 +143,9 @@ function Index() {
           </Link>
         </div>
       </main>
+
+      <div className="h-28" />
+      <LeadCta />
     </div>
   );
 }
