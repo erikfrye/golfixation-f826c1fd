@@ -6,6 +6,7 @@ import { Flag, Trophy, ChevronRight } from "lucide-react";
 import { AboutButton } from "@/components/about-dialog";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { UserMenu } from "@/components/user-menu";
+import { LeadCta } from "@/components/lead-cta";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -142,6 +143,9 @@ function Index() {
           </Link>
         </div>
       </main>
+
+      <div className="h-28" />
+      <LeadCta />
     </div>
   );
 }
