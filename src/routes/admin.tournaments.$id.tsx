@@ -159,6 +159,13 @@ function EditTournament() {
           >
             <Activity className="h-4 w-4" /> Live ops
           </Link>
+          <Link
+            to="/admin/tournaments/$id/export"
+            params={{ id }}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent"
+          >
+            <Download className="h-4 w-4" /> Export
+          </Link>
         </div>
       </div>
 
