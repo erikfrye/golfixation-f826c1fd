@@ -341,3 +341,22 @@
   }
   .animate-wii-ray { animation: none; opacity: 0; }
 }
+
+@media print {
+  .no-print,
+  header,
+  footer {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  .print-export {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+}
