@@ -6,7 +6,7 @@ import { adminExportTournament } from "@/lib/admin.functions";
 import { ScorecardSheet } from "@/components/export/scorecard-sheet";
 import { exportFileBase, toCsv, type ExportPayload } from "@/lib/export-scorecard";
 
-export const Route = createFileRoute("/admin/tournaments/$id/export")({
+export const Route = createFileRoute("/admin/tournaments/$id_/export")({
   head: () => ({
     meta: [
       { title: "Export scores — Golfixation" },
