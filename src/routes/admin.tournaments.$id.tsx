@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, Users, Trash2, History, Settings, Target, Activity } from "lucide-react";
+import { ChevronLeft, Users, Trash2, History, Settings, Target, Activity, Download } from "lucide-react";
 import { adminGetTournament } from "@/lib/admin.functions";
 import {
   Accordion,
