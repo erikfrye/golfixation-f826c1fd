@@ -266,3 +266,57 @@ export const adminCloneTournament = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) =>
     adminCloneTournamentHandler(getAdminClient(), context.userId, data),
   );
+
+/* Admin: full export payload for a tournament (scorecard, rosters, contests) */
+export async function adminExportTournamentHandler(
+  admin: AdminLike,
+  userId: string,
+  data: { id: string },
+) {
+  const a = await assertAdmin(userId, admin);
+  const { data: tournament, error: tErr } = await a
+    .from("tournaments")
+    .select("id, name, location, start_date, format, num_holes, status")
+    .eq("id", data.id)
+    .maybeSingle();
+  if (tErr) throw new Error(tErr.message);
+  if (!tournament) throw new Error("Tournament not found");
+
+  const [holesRes, teamsRes, playersRes, scoresRes, contestsRes, entriesRes] =
+    await Promise.all([
+      a.from("holes").select("hole_number, par").eq("tournament_id", data.id).order("hole_number"),
+      a.from("teams").select("id, name").eq("tournament_id", data.id).order("name"),
+      a.from("team_players").select("team_id, name").eq("tournament_id", data.id).order("created_at"),
+      a.from("hole_scores").select("team_id, hole_number, strokes").eq("tournament_id", data.id),
+      a
+        .from("proximity_contests")
+        .select("id, hole_number, name, kind, eligibility, sponsor, sort_order")
+        .eq("tournament_id", data.id),
+      a
+        .from("proximity_entries")
+        .select("contest_id, player_name_snapshot, team_name_snapshot, note, entered_at")
+        .eq("tournament_id", data.id)
+        .order("round_position", { ascending: false })
+        .order("entered_at", { ascending: false }),
+    ]);
+  for (const res of [holesRes, teamsRes, playersRes, scoresRes, contestsRes, entriesRes]) {
+    if (res.error) throw new Error(res.error.message);
+  }
+
+  return {
+    tournament,
+    holes: holesRes.data ?? [],
+    teams: teamsRes.data ?? [],
+    players: playersRes.data ?? [],
+    scores: scoresRes.data ?? [],
+    contests: contestsRes.data ?? [],
+    entries: entriesRes.data ?? [],
+  };
+}
+
+export const adminExportTournament = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) =>
+    adminExportTournamentHandler(getAdminClient(), context.userId, data),
+  );
