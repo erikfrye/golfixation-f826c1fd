@@ -46,7 +46,9 @@ export function ScorecardSheet({
     return (
       <td key={key} className={cell}>
         {strokes == null ? "" : (
-          <span className={`score-mark score-mark-${mark ?? "par"}`}>{strokes}</span>
+          <span className={`score-mark score-mark-${mark ?? "par"}`}>
+            <span className="score-mark-inner">{strokes}</span>
+          </span>
         )}
       </td>
     );
