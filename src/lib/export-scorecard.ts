@@ -62,6 +62,20 @@ export type Scorecard = {
   rows: ScoreRow[];
 };
 
+export type ScoreMark = "eagle" | "birdie" | "par" | "bogey" | "double-bogey" | "over";
+
+/** Traditional paper-scorecard mark for a played hole. */
+export function scoreMark(strokes: number | null, par: number): ScoreMark | null {
+  if (strokes == null || strokes < 1 || par < 1) return null;
+  const difference = strokes - par;
+  if (difference <= -2) return "eagle";
+  if (difference === -1) return "birdie";
+  if (difference === 0) return "par";
+  if (difference === 1) return "bogey";
+  if (difference === 2) return "double-bogey";
+  return "over";
+}
+
 function sum(values: (number | null)[]): number | null {
   const played = values.filter((v): v is number => v != null);
   return played.length === 0 ? null : played.reduce((a, b) => a + b, 0);

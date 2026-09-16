@@ -2,6 +2,7 @@ import { Flag } from "lucide-react";
 import {
   buildScorecard,
   proximityWinners,
+  scoreMark,
   type ExportPayload,
 } from "@/lib/export-scorecard";
 
@@ -27,17 +28,35 @@ export function ScorecardSheet({
   const t = payload.tournament;
   const front = card.holeNumbers.slice(0, 9);
   const back = card.hasBackNine ? card.holeNumbers.slice(9) : [];
+  const playersByTeam = new Map<string, string[]>();
+  for (const player of payload.players) {
+    const roster = playersByTeam.get(player.team_id) ?? [];
+    roster.push(player.name);
+    playersByTeam.set(player.team_id, roster);
+  }
 
   const cell =
-    "border border-border px-1.5 py-1 text-center text-[11px] tabular-nums sm:text-xs";
+    "border border-border px-1 py-1 text-center text-[11px] tabular-nums";
   const headCell =
-    "border border-border bg-foreground px-1.5 py-1 text-center text-[11px] font-semibold text-background sm:text-xs";
+    "border border-border bg-foreground px-1 py-1 text-center text-[11px] font-semibold text-background";
   const totalCell = `${cell} bg-muted font-semibold`;
+
+  const scoreCell = (strokes: number | null, par: number, key: number) => {
+    const mark = scoreMark(strokes, par);
+    return (
+      <td key={key} className={cell}>
+        {strokes == null ? "" : (
+          <span className={`score-mark score-mark-${mark ?? "par"}`}>{strokes}</span>
+        )}
+      </td>
+    );
+  };
 
   return (
     <div
       ref={innerRef}
-      className="overflow-hidden rounded-lg border border-border bg-card text-card-foreground"
+      data-scorecard-holes={card.hasBackNine ? "18" : "9"}
+      className={`${card.hasBackNine ? "w-[1100px]" : "w-[720px]"} scorecard-sheet overflow-hidden rounded-lg border border-border bg-card text-card-foreground`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 bg-primary px-4 py-3 text-primary-foreground">
         <div className="flex items-center gap-2">
@@ -56,7 +75,7 @@ export function ScorecardSheet({
         <table className="w-full border-collapse">
           <thead>
             <tr>
-              <th className={`${headCell} text-left`}>Team</th>
+              <th className={`${headCell} w-48 min-w-48 text-left`}>Team / players</th>
               {front.map((n) => (
                 <th key={n} className={headCell}>
                   {n}
@@ -99,22 +118,19 @@ export function ScorecardSheet({
           <tbody>
             {card.rows.map((r) => (
               <tr key={r.teamId}>
-                <td className={`${cell} whitespace-nowrap text-left font-medium`}>
-                  {r.name}
+                <td className={`${cell} w-48 min-w-48 text-left`}>
+                  <span className="block font-semibold">{r.name}</span>
+                  <span className="mt-0.5 block whitespace-normal text-[9px] leading-tight text-muted-foreground">
+                    {(playersByTeam.get(r.teamId) ?? []).join(" · ") || "No players listed"}
+                  </span>
                 </td>
-                {r.strokes.slice(0, 9).map((s, i) => (
-                  <td key={i} className={cell}>
-                    {s ?? ""}
-                  </td>
-                ))}
+                {r.strokes.slice(0, 9).map((s, i) => scoreCell(s, card.pars[i] ?? 4, i))}
                 <td className={totalCell}>{r.out ?? ""}</td>
                 {card.hasBackNine && (
                   <>
-                    {r.strokes.slice(9).map((s, i) => (
-                      <td key={i} className={cell}>
-                        {s ?? ""}
-                      </td>
-                    ))}
+                    {r.strokes
+                      .slice(9)
+                      .map((s, i) => scoreCell(s, card.pars[i + 9] ?? 4, i + 9))}
                     <td className={totalCell}>{r.in ?? ""}</td>
                   </>
                 )}

@@ -333,6 +333,40 @@
     0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
+/* ---- Printable tournament scorecard marks ---- */
+.score-mark {
+  display: inline-grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  line-height: 1;
+}
+.score-mark-birdie {
+  border: 1.5px solid var(--primary);
+  border-radius: 9999px;
+  color: var(--primary);
+  font-weight: 700;
+}
+.score-mark-eagle {
+  border: 1.5px solid var(--primary);
+  border-radius: 9999px;
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+.score-mark-bogey {
+  border: 1.5px solid var(--destructive);
+  color: var(--destructive);
+  font-weight: 700;
+}
+.score-mark-double-bogey,
+.score-mark-over {
+  border: 1.5px solid var(--destructive);
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--destructive);
+  color: var(--destructive);
+  font-weight: 700;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-wii-pop,
   .animate-wii-soft,
@@ -354,6 +388,27 @@
   .print-export {
     margin: 0 !important;
     padding: 0 !important;
+  }
+  .scorecard-preview {
+    overflow: visible !important;
+  }
+  .scorecard-sheet {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-radius: 0 !important;
+  }
+  .scorecard-sheet table {
+    table-layout: fixed;
+  }
+  .scorecard-sheet th,
+  .scorecard-sheet td {
+    min-width: 0 !important;
+    padding: 2px !important;
+    font-size: 8px !important;
+  }
+  .score-mark {
+    width: 1rem;
+    height: 1rem;
   }
   @page {
     size: landscape;
