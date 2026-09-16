@@ -4,6 +4,7 @@ import {
   proximityWinners,
   toCsv,
   exportFileBase,
+  scoreMark,
   type ExportPayload,
 } from "../export-scorecard";
 
@@ -98,6 +99,18 @@ describe("buildScorecard", () => {
     expect(card.hasBackNine).toBe(false);
     expect(card.holeNumbers).toHaveLength(9);
     expect(card.rows[0].in).toBeNull();
+  });
+});
+
+describe("scoreMark", () => {
+  it("maps scores to traditional scorecard marks", () => {
+    expect(scoreMark(2, 4)).toBe("eagle");
+    expect(scoreMark(3, 4)).toBe("birdie");
+    expect(scoreMark(4, 4)).toBe("par");
+    expect(scoreMark(5, 4)).toBe("bogey");
+    expect(scoreMark(6, 4)).toBe("double-bogey");
+    expect(scoreMark(7, 4)).toBe("over");
+    expect(scoreMark(null, 4)).toBeNull();
   });
 });
 
